@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
@@ -19,6 +20,8 @@ import net.minecraft.util.EnumFacing.Axis;
 import net.minecraft.util.EnumFacing.AxisDirection;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import qwertzite.barostrain.core.BSExplosionBase.BlockStrainSimulator;
+import qwertzite.barostrain.core.BSExplosionBase.PressureRay;
 
 /**
  * 各ブロックの
@@ -39,22 +42,33 @@ public class AxisStrain {
 	private final World world;
 	private final Entity exploder;
 	private final BSExplosionBase explosion;
+	private final BlockStrainSimulator simulator;
 	private final Axis axis;
 	
 	private final Map<BlockPos, StrainStatus> strainmap = Collections.synchronizedMap(new HashMap<>());
 	
-	private final Object2DoubleMap<BlockFace> appliedForce = new Object2DoubleOpenHashMap<>();
+	private final Map<BlockFace, Set<PressureRay>> collidedRays = new HashMap<>();
+	private final Object2DoubleMap<BlockFace> initialForce = new Object2DoubleOpenHashMap<>();
+	private final Object2DoubleMap<BlockFace> remainingForce = new Object2DoubleOpenHashMap<>();
 	
-	public AxisStrain(World world, Entity exploder, BSExplosionBase explosion, Axis axis) {
+	
+	public AxisStrain(World world, Entity exploder, BSExplosionBase explosion, BlockStrainSimulator simulator, Axis axis) {
 		this.world = world;
 		this.exploder = exploder;
 		this.explosion = explosion;
+		this.simulator = simulator;
 		this.axis = axis;
 	}
 	
-	public synchronized void applyForce(BlockPos pos, EnumFacing face, double force) {
+	public synchronized void applyForce(PressureRay ray, BlockPos pos, EnumFacing face, double force) {
 		BlockFace bf = new BlockFace(pos, face);
-		this.appliedForce.put(bf, this.appliedForce.getDouble(bf));
+		Set<PressureRay> rays;
+		if (!this.collidedRays.containsKey(bf)) this.collidedRays.put(bf, rays = new HashSet<>());
+		else rays = this.collidedRays.get(bf);
+		rays.add(ray);
+		double f = this.remainingForce.getDouble(bf);
+		this.initialForce.put(bf, f);
+		this.remainingForce.put(bf, f);
 	}
 	
 	/**
@@ -74,10 +88,10 @@ public class AxisStrain {
 
 		while (masterFlag) { // これ以上探索最大深さを増やしても無駄な時に終了
 			masterFlag = false;
-			for (BlockFace bf : this.appliedForce.keySet()) { // それぞれの圧力がかかった面に対して
+			for (BlockFace bf : this.remainingForce.keySet()) { // それぞれの圧力がかかった面に対して
 				int depth = maxDepth;
 				// 衝撃波から受けている力の向き
-				double forceAppliedByBlast = this.appliedForce.getDouble(bf) * (this.isDirPositive(bf.getFacing().getAxisDirection()) ? -1.0d : 1.0d);
+				double forceAppliedByBlast = this.remainingForce.getDouble(bf) * (this.isDirPositive(bf.getFacing().getAxisDirection()) ? -1.0d : 1.0d);
 				{
 					StrainStatus strstat = this.getStrainStatus(bf.getBlockpos()); // 最初のブロックの状態
 					DFSNode node0 = new DFSNode(strstat.getPos(), depth, forceAppliedByBlast);
@@ -139,8 +153,8 @@ public class AxisStrain {
 						}
 					}
 				}
-				if (BSExplosionBase.isZero(forceAppliedByBlast)) {this.appliedForce.remove(bf); } // 伝えるべき力が残っていないときは取り除く
-				else { this.appliedForce.put(bf, forceAppliedByBlast); } // 伝わった分は取り除いてセットしなおす
+				if (BSExplosionBase.isZero(forceAppliedByBlast)) {this.remainingForce.remove(bf); } // 伝えるべき力が残っていないときは取り除く
+				else { this.remainingForce.put(bf, forceAppliedByBlast); } // 伝わった分は取り除いてセットしなおす
 				dfs.clear();
 			}
 			maxDepth++; // 次の週はより深くまで探索する
@@ -156,7 +170,7 @@ public class AxisStrain {
 		
 		while (!possibleAbsorbable.isEmpty()) {
 			BlockPos pos = possibleAbsorbable.iterator().next();
-			
+			// TODO: 連結成分を全部取り除く
 		}
 		
 		return null;
@@ -167,9 +181,7 @@ public class AxisStrain {
 			return this.strainmap.get(blockpos);
 		} else {
 			IBlockState iblockstate = this.world.getBlockState(blockpos);
-			double resistance = this.exploder != null ?
-					this.exploder.getExplosionResistance(this.explosion, this.world, blockpos, iblockstate)
-					: iblockstate.getBlock().getExplosionResistance(this.world, blockpos, (Entity) null, this.explosion);
+			double resistance = this.simulator.getResistance(blockpos);
 			StrainStatus stat = new StrainStatus(blockpos, this.axis, resistance, iblockstate.getBlockHardness(this.world, blockpos));
 			return stat;
 		}
@@ -205,6 +217,25 @@ public class AxisStrain {
 		flow = this.getStrainStatus(pos).calcFlowableForceForFace(face, flow);
 		flow = -this.getStrainStatus(pos.offset(face)).calcFlowableForceForFace(face.getOpposite(), -flow);
 		return flow;
+	}
+	
+	
+	public Stream<PressureRay> rayRefAndTr() {
+		return this.collidedRays.entrySet().parallelStream().flatMap(e -> {
+			BlockFace bf = e.getKey();
+			Set<PressureRay> rays = e.getValue(); 
+			double initial = this.initialForce.getDouble(bf);
+			double remain = this.remainingForce.getDouble(bf);
+			double tr = BSExplosionBase.isZero(initial) ? 0.0d : remain / initial;
+			
+			return rays.parallelStream().flatMap(r -> r.reflection(tr, initial - remain));
+		});
+	}
+	
+	public void clear() {
+		this.collidedRays.clear();
+		this.initialForce.clear();
+		this.remainingForce.clear();
 	}
 	
 	// BFSを行い空き容量のある所に流す
