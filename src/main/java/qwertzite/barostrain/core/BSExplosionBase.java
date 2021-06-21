@@ -317,7 +317,7 @@ public class BSExplosionBase extends Explosion {
 			if (this.hitForce <= 0.0d) return Stream.empty();
 			if (this.hit.hitVec.distanceTo(this.origin.add(posPrev)) <= 0.01d) return Stream.empty();
 			
-			double transmission = division * tranRate / (1.0d + resistance*0.1d);
+			double transmission = division * tranRate; // / (1.0d + resistance*0.1d);
 			double reflection = division * (1.0d - tranRate);
 			Vec3d relHit = this.hit.hitVec.subtract(this.origin);
 			PressureRay trans;
@@ -409,14 +409,15 @@ public class BSExplosionBase extends Explosion {
 		private final Entity exploder;
 		private final BSExplosionBase explosion;
 
-		private Map<BlockPos, Set<PressureRay>> rayMap = Collections.synchronizedMap(new HashMap<>()); // 今回のバッチのray
-		private Set<PressureRay> pendingRays = new HashSet<>();
+//		private Map<BlockPos, Set<PressureRay>> rayMap = Collections.synchronizedMap(new HashMap<>()); // 今回のバッチのray
+		private Set<PressureRay> pendingRays = new HashSet<>(); // 今回は衝突しなかったray，分割処理を施して
 		
-		/** Force currently applied */
-		private Map<BlockPos, Double> blockStatus = Collections.synchronizedMap(new HashMap<>());
 		private EnumMap<Axis, AxisStrain> axis = new EnumMap<>(Axis.class);
+		@SuppressWarnings("unused")
 		private AxisStrain axisX;
+		@SuppressWarnings("unused")
 		private AxisStrain axisY;
+		@SuppressWarnings("unused")
 		private AxisStrain axisZ;
 		
 		/** Result and blasting direction. */
@@ -427,15 +428,15 @@ public class BSExplosionBase extends Explosion {
 			this.world = world;
 			this.exploder = exploder;
 			this.explosion = explosion;
-			this.axis.put(Axis.X, this.axisX = new AxisStrain(world, this.exploder, this.explosion, Axis.X));
-			this.axis.put(Axis.Y, this.axisY = new AxisStrain(world, this.exploder, this.explosion, Axis.Y));
-			this.axis.put(Axis.Z, this.axisZ = new AxisStrain(world, this.exploder, this.explosion, Axis.Z));
+			this.axis.put(Axis.X, this.axisX = new AxisStrain(world, this.exploder, this.explosion, this, Axis.X));
+			this.axis.put(Axis.Y, this.axisY = new AxisStrain(world, this.exploder, this.explosion, this, Axis.Y));
+			this.axis.put(Axis.Z, this.axisZ = new AxisStrain(world, this.exploder, this.explosion, this, Axis.Z));
 		}
 		
 		// ==== STEP 1: Ray Process ====
 		
 		/**
-		 * 
+		 * ray の衝突に関する処理を行う．
 		 * @param ray
 		 */
 		public void rayTraceBlocks(PressureRay ray) {
@@ -496,16 +497,16 @@ public class BSExplosionBase extends Explosion {
 		}
 
 		private void addCollidingRay(BlockPos pos, PressureRay ray, boolean reversed) {
-			if (!rayMap.containsKey(pos)) {
-				rayMap.put(pos, new HashSet<>());
-			}
-			rayMap.get(pos).add(ray);
 			EnumFacing facing = ray.hit.sideHit;
 			double force = ray.getHitPressure();
 			if (reversed) force *= -1;
-			this.axis.get(facing.getAxis()).applyForce(pos, facing, force);
+			this.axis.get(facing.getAxis()).applyForce(ray, pos, facing, force);
 		}
 		
+		/**
+		 * 今回は衝突しなかったray, 分岐して次のステップへ
+		 * @param ray
+		 */
 		private synchronized void addPendingRay(PressureRay ray) {
 			this.pendingRays.add(ray);
 		}
@@ -557,61 +558,38 @@ public class BSExplosionBase extends Explosion {
 		 * @return
 		 */
 		public Set<PressureRay> destructionEval() {
-			this.axis.values().parallelStream().forEach(ax -> ax.evaluate());
-			// TODO: 破壊されたブロックと余剰圧力を算出する　<BlockPos, Vec3d>
 			
-			Set<PressureRay> result = Stream.concat(this.pendingRays.parallelStream().flatMap(r -> r.nextStep()),
-					this.rayMap.entrySet().parallelStream()
-					.flatMap(e -> {
-						BlockPos blockpos = e.getKey();
-						if (!this.blockStatus.containsKey(blockpos)) this.blockStatus.put(blockpos, 0.0d);
-						double force = this.blockStatus.get(blockpos);
-						double batchSum = 0.0d;
-						Set<PressureRay> rays = e.getValue();
-						for (PressureRay ray : rays) {
-							batchSum += ray.getHitPressure();
-						}
-						
-						IBlockState iblockstate = this.world.getBlockState(blockpos);
-						double resistance = this.exploder != null ?
-								this.exploder.getExplosionResistance(this.explosion, this.world, blockpos, iblockstate)
-								: iblockstate.getBlock().getExplosionResistance(this.world, blockpos, (Entity) null, this.explosion);
-						
-						// TODO: 個々の破壊判定を，置き換える
-						double resRate = (batchSum + force - resistance) / batchSum;
-						if (resRate >= 0.0d && (this.exploder == null || this.exploder.canExplosionDestroyBlock(this.explosion,
-								this.world, blockpos, iblockstate, (float) batchSum))) {
-							double vx = 0.0d;
-							double vy = 0.0d;
-							double vz = 0.0d;
-							for (PressureRay ray : rays) {
-								double hitP = ray.getHitPressure();
-								Vec3d hitD = ray.getDirection();
-								vx += hitD.x * hitP * resRate;
-								vy += hitD.y * hitP * resRate;
-								vz += hitD.z * hitP * resRate;
-							}
-							this.markAsAffected(blockpos, new Vec3d(vx, vy, vz), resistance);
-							this.blockStatus.remove(blockpos);
-							// Stream 透過分を得る，反射分を得る
-						} else {
-							resRate = 0.0d;
-							// 反射分のStream
-							this.blockStatus.put(blockpos, force + batchSum);
-						}
-						double transmittance = resRate;
-						return rays.parallelStream().flatMap(r -> r.reflection(transmittance, resistance));
-					}))
-					.collect(Collectors.toSet());
+			for (BlockPos dst : this.axis.values().parallelStream().flatMap(ax -> ax.evaluate().parallelStream()).collect(Collectors.toSet())) {
+				this.affectedBlocks.put(dst, Vec3d.ZERO);
+			}
+			this.affectedBlocks.putAll(this.axis.values().parallelStream()
+					.flatMap(ax -> ax.evaluate().parallelStream())
+					.collect(Collectors.toMap(pos -> pos, pos -> Vec3d.ZERO)));
+			
+			Set<PressureRay> result = Stream.concat(
+					this.pendingRays.parallelStream().flatMap(r -> r.nextStep()),
+					this.axis.values().parallelStream().flatMap(ax -> ax.rayRefAndTr())).collect(Collectors.toSet());
 			
 			this.pendingRays.clear();
-			this.rayMap.clear();
+			this.axis.values().stream().forEach(ax -> ax.clear());
+//			this.rayMap.clear();
+			// TODO: axix の各成分を初期化する
 			return result;
 		}
 		
-		private synchronized void markAsAffected(BlockPos pos, Vec3d vel, double resistance) {
-			this.affectedBlocks.put(pos, vel);
-			this.resistanceMap.put(pos, resistance);
+		public double getResistance(BlockPos pos) {
+			synchronized (pos) {
+				if (!this.resistanceMap.containsKey(pos)) {
+					IBlockState iblockstate = this.world.getBlockState(pos);
+					double resistance = this.exploder != null ?
+							this.exploder.getExplosionResistance(this.explosion, this.world, pos, iblockstate)
+							: iblockstate.getBlock().getExplosionResistance(this.world, pos, (Entity) null, this.explosion);
+					this.resistanceMap.put(pos, resistance);
+					return resistance;
+				} else{
+					return this.resistanceMap.getDouble(pos);
+				}
+			}
 		}
 		
 		// ==== final step: result retrieval ====
