@@ -6,17 +6,35 @@ import net.minecraft.util.math.BlockPos;
 public class DFSNode {
 	
 	private final BlockPos pos;
+	private final EnumFacing forceCameFrom;
 	private EnumFacing prevFacing;
 	private final int depth;
 	private double remainingFlowCap;
 	
+	
 	public DFSNode(BlockPos pos, int depth, double flowCap) {
+		this(pos, depth, flowCap, null);
+	}
+	
+	/**
+	 * 
+	 * @param pos
+	 * @param depth
+	 * @param flowCap
+	 * @param forceCameFrom この位置から見てこちらの方向から力が伝わってきた．
+	 */
+	public DFSNode(BlockPos pos, int depth, double flowCap, EnumFacing forceCameFrom) {
 		this.pos = pos;
+		this.forceCameFrom = forceCameFrom;
 		this.prevFacing = null;
 		this.depth = depth;
 		this.remainingFlowCap = flowCap;
 	}
-
+	
+	public EnumFacing getFaceForceCameFrom() {
+		return this.forceCameFrom;
+	}
+	
 	public EnumFacing getPrevFacing() {
 		return prevFacing;
 	}
@@ -26,10 +44,11 @@ public class DFSNode {
 	}
 	
 	public EnumFacing getNextFacing() {
-		if (prevFacing == null) return EnumFacing.VALUES[0];
-		int ni = this.prevFacing.getIndex() + 1;
+		int ni;
+		if (prevFacing == null) ni = 0;
+		else ni = this.prevFacing.getIndex() + 1;
 		if (ni >= EnumFacing.VALUES.length) return null;
-		return this.prevFacing = EnumFacing.getFront(ni);
+		return this.prevFacing = EnumFacing.VALUES[ni];
 	}
 
 	/**
