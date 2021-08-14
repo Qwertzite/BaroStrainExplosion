@@ -23,7 +23,7 @@ public class StrainStatus {
 	
 	private double absorved = 0.0d;
 	/** その面が相手に及ぼしている力．<br>
-	 * すなわち受けている力と同じ方向になる．
+	 * 正なら，その軸の正の向きの力を及ぼしている (自分は負の向きの反力を受けている)
 	 */
 	private EnumMap<EnumFacing, Double> transmittingForce = new EnumMap<>(EnumFacing.class);
 	
@@ -38,12 +38,25 @@ public class StrainStatus {
 	
 	public double getAbsorveable(double applied) {
 		return MathHelper.clamp(applied, this.blastResistance/10-this.absorved, -this.blastResistance / 10.0d - this.absorved);
-//		if (applied > 0.0d) {
-//			return Math.min(applied, this.blastResistance / 10.0d - this.absorved);
-//		}
-//		else {
-//			return Math.max(applied, -this.blastResistance / 10.0d - this.absorved);
-//		}
+	}
+	
+	/** どちらか一方の上限に達しているか */
+	public boolean hasReachedCapacity() {
+		return absorved <= -this.blastResistance / 10.0d + BSExplosionBase.ERR || this.blastResistance / 10.0d - BSExplosionBase.ERR <= absorved;
+	}
+	
+	public boolean isElastoPasticDeforming(EnumFacing face) {
+		double force = this.transmittingForce.getOrDefault(face, 0.0d);
+		final double ERR = BSExplosionBase.ERR;
+		if (face.getAxis() == this.axis) { // 軸力
+			if (face.getAxisDirection() == AxisDirection.POSITIVE) { // 正なら圧縮，負なら引張
+				return force >= this.blastResistance - ERR || force <= -this.hardness + ERR;
+			} else {
+				return force >= this.hardness - ERR        || force <= -this.blastResistance + ERR;
+			}
+		} else { // 剪断力
+			return force <= - this.hardness / 2 + ERR || this.hardness / 2 - ERR <= force;
+		}
 	}
 	
 	public void absorveForce(double force) {
@@ -70,5 +83,11 @@ public class StrainStatus {
 	 */
 	public void flowForceThroughFace(EnumFacing direction, double force) {
 		this.transmittingForce.put(direction, this.transmittingForce.getOrDefault(direction, 0.0d) + force);
+	}
+	
+	public double getAbsorved() { return this.absorved; }
+	
+	public double getTransmittingForce(EnumFacing direction) {
+		return this.transmittingForce.getOrDefault(direction, 0.0d);
 	}
 }
