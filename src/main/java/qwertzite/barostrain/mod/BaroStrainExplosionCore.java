@@ -19,6 +19,7 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import qwertzite.barostrain.core.BSExplosionBase;
 import qwertzite.barostrain.core.BSExplosionBase.PressureRay;
 import qwertzite.barostrain.core.BsExplosions;
+import qwertzite.barostrain.mod.test.CommandBSTest;
 import qwertzite.barostrain.util.BsModLog;
 
 @Mod(modid = BaroStrainExplosionCore.MODID, name = BaroStrainExplosionCore.MOD_NAME, version = BaroStrainExplosionCore.VERSION)
@@ -36,19 +37,12 @@ public class BaroStrainExplosionCore {
 		BsModLog.onPreInit(event, true);
 		BsExplosions.onInit(NetworkRegistry.INSTANCE.newSimpleChannel(MODID), 0);
 		MinecraftForge.EVENT_BUS.register(this);
-		
-		PressureRay ray = new PressureRay(1.0f, 1.0f, Vec3d.ZERO, new Vec3d[] { Vec3d.ZERO, Vec3d.ZERO, Vec3d.ZERO }, null);
-		System.out.println(" 0 " + ray.pressureAt(0));
-		System.out.println(" 1 " + ray.pressureAt(1));
-		System.out.println(" 2 " + ray.pressureAt(2));
-		System.out.println(" 4 " + ray.pressureAt(4));
-		System.out.println(" 8 " + ray.pressureAt(8));
-		System.out.println("16 " + ray.pressureAt(16));
 	}
 	
 	@EventHandler
 	public void serverStarting(FMLServerStartingEvent event) {
 		event.registerServerCommand(new CommandExplosion());
+		event.registerServerCommand(new CommandBSTest());
 	}
 	
 //	@SubscribeEvent

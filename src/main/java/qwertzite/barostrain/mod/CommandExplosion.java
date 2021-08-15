@@ -26,7 +26,8 @@ public class CommandExplosion extends CommandBase {
 
 	@Override
 	public String getUsage(ICommandSender sender) {
-		return "/bsExp <type:v(Vanilla),bs(BaroStrain)> <x> <y> <z> <strength>";
+		return "/bsExp <type> <x> <y> <z> <strength>\n"
+				+ "type :v(Vanilla),bs(BaroStrain)";
 	}
 
 	@Override
