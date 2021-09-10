@@ -15,7 +15,7 @@ import net.minecraft.util.math.MathHelper;
  * @author qwertzite
  * @date 2021/04/01
  */
-public class StrainStatus {
+public class BlockStrain {
 	private BlockPos pos;
 	private Axis axis;
 	private double blastResistance = -1;
@@ -27,7 +27,7 @@ public class StrainStatus {
 	 */
 	private EnumMap<EnumFacing, Double> transmittingForce = new EnumMap<>(EnumFacing.class);
 	
-	public StrainStatus(BlockPos pos, Axis axis, double resistance, double hardness) {
+	public BlockStrain(BlockPos pos, Axis axis, double resistance, double hardness) {
 		this.pos = pos;
 		this.axis = axis;
 		this.blastResistance = resistance;
@@ -37,7 +37,7 @@ public class StrainStatus {
 	public BlockPos getPos() { return this.pos; }
 	
 	public double getAbsorveable(double applied) {
-		return MathHelper.clamp(applied, this.blastResistance/10-this.absorved, -this.blastResistance / 10.0d - this.absorved);
+		return MathHelper.clamp(applied, -this.blastResistance / 10.0d - this.absorved, this.blastResistance/10-this.absorved);
 	}
 	
 	/** どちらか一方の上限に達しているか */
@@ -48,15 +48,9 @@ public class StrainStatus {
 	public boolean isElastoPasticDeforming(EnumFacing face) {
 		double force = this.transmittingForce.getOrDefault(face, 0.0d);
 		final double ERR = BSExplosionBase.ERR;
-		if (face.getAxis() == this.axis) { // 軸力
-			if (face.getAxisDirection() == AxisDirection.POSITIVE) { // 正なら圧縮，負なら引張
-				return force >= this.blastResistance - ERR || force <= -this.hardness + ERR;
-			} else {
-				return force >= this.hardness - ERR        || force <= -this.blastResistance + ERR;
-			}
-		} else { // 剪断力
-			return force <= - this.hardness / 2 + ERR || this.hardness / 2 - ERR <= force;
-		}
+		double maxLim = this.getMaxLim(face);
+		double minLim = this.getMinLim(face);
+		return force <= minLim + ERR || maxLim - ERR <= force;
 	}
 	
 	public void absorveForce(double force) {
@@ -65,14 +59,28 @@ public class StrainStatus {
 
 	public double calcFlowableForceForFace(EnumFacing face, double applied) {
 		double current = this.transmittingForce.getOrDefault(face, 0.0d);
-		if (face.getAxis() == this.axis) { // 軸力
-			if (face.getAxisDirection() == AxisDirection.POSITIVE) {
-				return MathHelper.clamp(applied, this.blastResistance - current, -this.hardness - current); // 相手に正の向きの力を伝えるとき圧縮，負の向きの力を伝えるとき引張
-			} else {
-				return MathHelper.clamp(applied, this.hardness - current, -this.blastResistance - current);
-			}
-		} else { // 剪断力
-			return MathHelper.clamp(applied, this.hardness / 2 - current, -this.hardness / 2 - current);
+		double maxLim = this.getMaxLim(face) - current;
+		double minLim = this.getMinLim(face) - current;
+		return MathHelper.clamp(applied, minLim, maxLim);
+	}
+	
+	private double getMaxLim(EnumFacing facing) {
+		if (facing.getAxis() == this.axis) {
+			return facing.getAxisDirection() == AxisDirection.POSITIVE ?
+					this.blastResistance :
+					this.hardness;
+		} else {
+			return this.hardness / 2;
+		}
+	}
+	
+	private double getMinLim(EnumFacing facing) {
+		if (facing.getAxis() == this.axis) {
+			return facing.getAxisDirection() == AxisDirection.POSITIVE ?
+					- this.hardness :
+					- this.blastResistance;
+		} else {
+			return - this.hardness / 2;
 		}
 	}
 
@@ -89,5 +97,18 @@ public class StrainStatus {
 	
 	public double getTransmittingForce(EnumFacing direction) {
 		return this.transmittingForce.getOrDefault(direction, 0.0d);
+	}
+	
+	public double getBlastResistance() { return this.blastResistance; }
+	
+	@Override
+	public String toString() {
+		return this.pos + ",res=" + this.blastResistance + ",hrd=" + this.hardness + ",abs=" + absorved + " " 
+				+ "D:" + this.transmittingForce.getOrDefault(EnumFacing.DOWN, 0.0d) + " "
+				+ "U:" + this.transmittingForce.getOrDefault(EnumFacing.UP, 0.0d) + " "
+				+ "N:" + this.transmittingForce.getOrDefault(EnumFacing.NORTH, 0.0d) + " "
+				+ "S:" + this.transmittingForce.getOrDefault(EnumFacing.SOUTH, 0.0d) + " "
+				+ "W:" + this.transmittingForce.getOrDefault(EnumFacing.WEST, 0.0d) + " "
+				+ "E:" + this.transmittingForce.getOrDefault(EnumFacing.EAST, 0.0d);
 	}
 }

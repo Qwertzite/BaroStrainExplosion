@@ -17,6 +17,7 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.EnumFacing.Axis;
 import net.minecraft.util.EnumFacing.AxisDirection;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import qwertzite.barostrain.core.AxisStrain;
 
@@ -56,7 +57,7 @@ public class CommandBSTest extends CommandBase {
 			face = EnumFacing.byName(args[4]);
 			if (face == null) {
 				String ds = args[4].toLowerCase();
-				AxisDirection dir = ds.contains("+") ? AxisDirection.POSITIVE : AxisDirection.NEGATIVE;
+				AxisDirection dir = ds.contains("+") ? AxisDirection.NEGATIVE : AxisDirection.POSITIVE;
 				Axis axis;
 				if (ds.contains("x")) axis = Axis.X;
 				else if (ds.contains("y")) axis = Axis.Y;
@@ -64,6 +65,8 @@ public class CommandBSTest extends CommandBase {
 				face = EnumFacing.getFacingFromAxis(dir, axis);
 			}
 		}
+		sender.sendMessage(new TextComponentString(String.format("Strain testexecuted at (%d, %d, %d), strength %f, on face %s",
+				posx, posy, posz, strength, face.toString())));
 		this.executeExplosion(strength, new BlockPos(posx, posy, posz), face, sender.getEntityWorld());
 	}
 	
