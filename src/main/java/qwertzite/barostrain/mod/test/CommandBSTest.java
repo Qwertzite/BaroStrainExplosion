@@ -118,7 +118,7 @@ public class CommandBSTest extends CommandBase {
 		int y2 = arg.containsKey("y2") ? Integer.parseInt(arg.get("y2")) : 0;
 		int z2 = arg.containsKey("z2") ? Integer.parseInt(arg.get("z2")) : 0;
 		double s2 = arg.containsKey("s2") ? Double.parseDouble(arg.get("s2")) : 0;
-		EnumFacing face2 = arg.containsKey("f2") ? EnumFacing.byName(arg.get("f2")) : EnumFacing.WEST;
+		EnumFacing face2 = arg.containsKey("f2") ? EnumFacing.byName(arg.get("f2")) : EnumFacing.EAST;
 		face2 = arg.containsKey("d2") ? strDirToFace(arg.get("d2")) : face2;
 		
 		World world = sender.getEntityWorld();

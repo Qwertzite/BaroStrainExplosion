@@ -119,6 +119,7 @@ public class AxisStrain {
 					final double absorvingCap = this.canAbsorb(currentPos, flowReachedHere);
 					if (!BSExplosionBase.isZero(absorvingCap)) { // 現在のブロックが力を慣性力で吸収できる場合 TODO: 逆向きの力を吸収していた場合reversed = trueに設定する
 						System.out.println("aborved! " + currentPos + " " + absorvingCap);
+						reversed |= flowReachedHere * currentStrStat.getAbsorved() < - BSExplosionBase.ERR; // 反転時継続
 						forceAppliedByBlast -= absorvingCap;
 						currentStrStat.absorveForce(absorvingCap); // 慣性力での吸収
 						for (Iterator<DFSNode> itr = dfs.iterator(); itr.hasNext();) {
