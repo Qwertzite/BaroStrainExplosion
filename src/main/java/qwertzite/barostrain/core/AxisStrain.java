@@ -90,7 +90,6 @@ public class AxisStrain {
 				{
 					
 					double forceCap = -this.getStrainStatus(bf.getBlockpos()).calcFlowableForceForFaceLog(bf.getFacing(), -forceAppliedByBlast);
-					System.out.println("Force Cap=" + forceCap + " applied=" + forceAppliedByBlast);
 					if (BSExplosionBase.isZero(forceCap)) {
 						if (!BSExplosionBase.isZero(forceAppliedByBlast)) { remainingNext.put(bf, forceAppliedByBlast); }
 						continue;
