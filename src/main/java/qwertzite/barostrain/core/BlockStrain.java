@@ -56,6 +56,14 @@ public class BlockStrain {
 	public void absorveForce(double force) {
 		this.absorved += force;
 	}
+	
+	public double calcFlowableForceForFaceLog(EnumFacing face, double applied) {
+		double current = this.transmittingForce.getOrDefault(face, 0.0d);
+		double maxLim = this.getMaxLim(face) - current;
+		double minLim = this.getMinLim(face) - current;
+		System.out.println("face=" + face + " appl=" + applied + " current=" + current + " min=" + minLim + " max=" + maxLim);
+		return MathHelper.clamp(applied, minLim, maxLim);
+	}
 
 	public double calcFlowableForceForFace(EnumFacing face, double applied) {
 		double current = this.transmittingForce.getOrDefault(face, 0.0d);

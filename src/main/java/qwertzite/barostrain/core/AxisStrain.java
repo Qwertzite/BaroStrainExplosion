@@ -88,8 +88,16 @@ public class AxisStrain {
 				// ブロックが衝撃波から受けている力
 				double forceAppliedByBlast = this.remainingForce.getDouble(bf);
 				{
+					
+					double forceCap = -this.getStrainStatus(bf.getBlockpos()).calcFlowableForceForFaceLog(bf.getFacing(), -forceAppliedByBlast);
+					System.out.println("Force Cap=" + forceCap + " applied=" + forceAppliedByBlast);
+					if (BSExplosionBase.isZero(forceCap)) {
+						if (!BSExplosionBase.isZero(forceAppliedByBlast)) { remainingNext.put(bf, forceAppliedByBlast); }
+						continue;
+					}
+					
 					BlockStrain strstat = this.getStrainStatus(bf.getBlockpos()); // 最初のブロックの状態
-					DFSNode node0 = new DFSNode(strstat.getPos(), maxDepth, forceAppliedByBlast);
+					DFSNode node0 = new DFSNode(strstat.getPos(), maxDepth, forceCap);
 					dfs.push(node0);
 				}
 				
@@ -128,6 +136,9 @@ public class AxisStrain {
 								System.out.println("abs flow " + n.getPos());
 							}
 						}
+						// 圧力が加わった面の計算
+						this.getStrainStatus(bf.getBlockpos()).flowForceThroughFace(bf.getFacing(), -absorvingCap);
+						
 						// 現在のブロックがさらに吸収できる場合，ncap == 0 になるのでDFSを戻る．
 						// そうでなければ，ncap != 0 になるのでそのままになる．
 						if (currentStrStat.hasReachedCapacity()) { // 新たに吸収上限に達したブロックは周囲のstatusをチェックする．これにより必ずcap上限に達したブロックはcapに余裕のあるブロックに接する
@@ -208,6 +219,7 @@ public class AxisStrain {
 //				destroyed.add(pos);
 //			}
 //		}
+		System.out.println("remaining=" + this.remainingForce.size());
 		for (BlockFace bf : this.remainingForce.keySet()) {
 			BlockPos pos = bf.getBlockpos();
 			if (destroyed.contains(pos)) continue;
