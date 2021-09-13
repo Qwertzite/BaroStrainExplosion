@@ -73,6 +73,7 @@ public class AxisStrain {
 		pos2depthN.defaultReturnValue(-1);
 		
 		int maxDepth = 0;
+		int minDepth = 0;
 
 //		Object2DoubleMap<BlockFace> originalForce = new Object2DoubleOpenHashMap<>(this.remainingForce);
 		
@@ -147,7 +148,7 @@ public class AxisStrain {
 					} else { // 自分では吸収できない場合　次のノードに流せるかを確かめる．
 						int depth = currentNode.getDepth();
 						System.out.println("DFS " + currentPos);
-						if (depth <= 0) {
+						if (depth <= minDepth) {
 							System.out.println("DFS ret depth lim");
 							masterFlag = true; //継続フラグを立てる　深さによる探索上限に達したため，もう一度深くして探索
 							dfs.pop(); // 戻る
@@ -187,7 +188,8 @@ public class AxisStrain {
 			this.remainingForce.putAll(remainingNext);
 			remainingNext.clear();
 			
-			if (masterFlag) maxDepth++; // 次の週はより深くまで探索する
+			if (masterFlag || reversed) maxDepth++; // 次の週はより深くまで探索する
+			if (reversed) minDepth++; // 打消しが発生した場合遠くへは行かない
 		}
 		System.out.println("master itr " + this.axis + " " + maxDepth);
 		
