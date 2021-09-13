@@ -105,7 +105,7 @@ public class CommandBSTest extends CommandBase {
 		Map<String, String> arg = new HashMap<>();
 		for (String s : args) {
 			String[] ss = s.split("=", 2);
-			arg.put(ss[0], ss[1]);
+			if (ss.length >= 2) arg.put(ss[0], ss[1]);
 		}
 		int x1 = arg.containsKey("x1") ? Integer.parseInt(arg.get("x1")) : 0;
 		int y1 = arg.containsKey("y1") ? Integer.parseInt(arg.get("y1")) : 0;
