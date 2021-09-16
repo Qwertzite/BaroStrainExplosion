@@ -61,7 +61,7 @@ public class BlockStrain {
 		double current = this.transmittingForce.getOrDefault(face, 0.0d);
 		double maxLim = this.getMaxLim(face) - current;
 		double minLim = this.getMinLim(face) - current;
-		System.out.println("face=" + face + " appl=" + applied + " current=" + current + " min=" + minLim + " max=" + maxLim);
+		System.out.println("flowable " + this.getPos() + " " + current + " " + this.getMinLim(face) + " " + this.getMaxLim(face) + " " + applied);
 		return MathHelper.clamp(applied, minLim, maxLim);
 	}
 
