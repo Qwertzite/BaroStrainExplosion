@@ -82,7 +82,6 @@ public class AxisStrain {
 		while (masterFlag || reversed) { // これ以上探索最大深さを増やしても無駄な時に終了
 			masterFlag = false;
 			reversed = false;
-			System.out.println("depth: " + maxDepth);
 			Object2DoubleMap<BlockFace> remainingNext = new Object2DoubleOpenHashMap<>();
 			for (BlockFace bf : this.remainingForce.keySet()) { // それぞれの圧力がかかった面に対して
 				
@@ -113,13 +112,11 @@ public class AxisStrain {
 					}
 					
 					// 既に遠くまで調査済みかを調べる．これはソースに依らない
-//					Object2IntMap<BlockPos> searchedDepthMap = flowReachedHere > 0 ? pos2depthP : pos2depthN;
-//					if (currentNode.getDepth() <= searchedDepthMap.getInt(currentPos)) { dfs.pop(); continue; } // 既により遠くまで調査済み
-//					searchedDepthMap.put(currentPos, currentNode.getDepth());
+					Object2IntMap<BlockPos> searchedDepthMap = flowReachedHere > 0 ? pos2depthP : pos2depthN;
+					searchedDepthMap.put(currentPos, currentNode.getDepth());
 					
 					final double absorvingCap = this.canAbsorb(currentPos, flowReachedHere);
-					if (!BSExplosionBase.isZero(absorvingCap)) { // 現在のブロックが力を慣性力で吸収できる場合 TODO: 逆向きの力を吸収していた場合reversed = trueに設定する
-						System.out.println("aborved! " + currentPos + " " + absorvingCap);
+					if (!BSExplosionBase.isZero(absorvingCap)) { // 現在のブロックが力を慣性力で吸収できる場合
 						reversed |= flowReachedHere * currentStrStat.getAbsorved() < - BSExplosionBase.ERR; // 反転時継続
 						forceAppliedByBlast -= absorvingCap;
 						currentStrStat.absorveForce(absorvingCap); // 慣性力での吸収
@@ -128,13 +125,11 @@ public class AxisStrain {
 							double ncap = n.getMaximumFlow() - absorvingCap;
 							n.setMaximumFlow(ncap);
 							if (BSExplosionBase.isZero(ncap)) { // これによって，流れを受け取れるところまで戻る．
-//								searchedDepthMap.removeInt(n.getPos());
+								searchedDepthMap.removeInt(n.getPos());
 								itr.remove();
-								System.out.println("abs rem " + n.getPos());
 							}
 							if (n != currentNode) { // 自分が吸収したのでない場合
 								this.flowForceThroughFace(n.getPos(), n.getPrevFacing(), absorvingCap);
-								System.out.println("abs flow " + n.getPos());
 							}
 						}
 						// 圧力が加わった面の計算
@@ -147,9 +142,7 @@ public class AxisStrain {
 						}
 					} else { // 自分では吸収できない場合　次のノードに流せるかを確かめる．
 						int depth = currentNode.getDepth();
-						System.out.println("DFS " + currentPos);
 						if (depth <= minDepth) {
-							System.out.println("DFS ret depth lim");
 							masterFlag = true; //継続フラグを立てる　深さによる探索上限に達したため，もう一度深くして探索
 							dfs.pop(); // 戻る
 							continue;
@@ -158,10 +151,10 @@ public class AxisStrain {
 							for (EnumFacing f = currentNode.getNextFacing(); f != null; f = currentNode.getNextFacing()) {
 								BlockPos npos = currentPos.offset(f); // 次の場所の候補
 								if (dfs.includes(npos)) continue; // 探索中の場所の場合はスキップ
+								if (depth-1 <= searchedDepthMap.getInt(npos)) continue; // TODO: 逆流する場合は許容する
 								double maxFlowForFace = this.calcMaxFlowForFace(currentPos, f, flowReachedHere);
 //								System.out.println("face " + f + " pos " + currentPos);
 								if (BSExplosionBase.isZero(maxFlowForFace)) continue; // この面には力を伝える余力はない
-								System.out.println("DFS next " + f + " mff=" + maxFlowForFace);
 								
 								dfs.push(currentNode);
 								dfs.push(new DFSNode(npos, depth-1, maxFlowForFace, f.getOpposite())); // この面から伝えられる最大の力
@@ -169,10 +162,10 @@ public class AxisStrain {
 							}
 						}
 					}
-					System.out.println("dfs_size=" + dfs.size());
-					for (BlockStrain bs : this.strainmap.values()) {
-						if (bs.getBlastResistance() != 0.0d) System.out.println(bs);
-					}
+//					System.out.println("dfs_size=" + dfs.size());
+//					for (BlockStrain bs : this.strainmap.values()) {
+//						if (bs.getBlastResistance() != 0.0d) System.out.println(bs);
+//					}
 				}
 				if (!BSExplosionBase.isZero(forceAppliedByBlast)) { remainingNext.put(bf, forceAppliedByBlast); } // 伝わった分は取り除いてセットしなおす
 				dfs.clear();
@@ -180,26 +173,21 @@ public class AxisStrain {
 				pos2depthP.clear(); // FIXME: 今はソースごとにクリアしている
 				pos2depthN.clear();
 			}
-			for (BlockStrain bs : this.strainmap.values()) {
-				if (bs.getBlastResistance() != 0.0d) System.out.println(bs);
-			}
 			
 			this.remainingForce.clear();
 			this.remainingForce.putAll(remainingNext);
 			remainingNext.clear();
 			
-			if (masterFlag || reversed) maxDepth++; // 次の週はより深くまで探索する
+//			maxDepth++;
+//			if (masterFlag) maxDepth++;
+			maxDepth++; // 次の週はより深くまで探索する
 			if (reversed) minDepth++; // 打消しが発生した場合遠くへは行かない
 		}
-		System.out.println("master itr " + this.axis + " " + maxDepth);
 		
 		// この段階で残っているすべての BF は吸収しきれなかった分 = 透過率を表している．
 		// strain status を調べ，absorbable なものとつながっていない = Min(min - c, max- c) != 0 のブロックは
 		// 吹き飛ばされた扱いになる．つながっているかどうかは，自身がnon-absorbable かつabsorbable なものとつながっていない場合．
 		// というよりも，つながっているものから辿って取り除いていく．
-		
-		System.out.println("Axis " + this.axis + " strainresult " + this.strainmap.size());
-		
 		
 		Set<BlockPos> notCheckedYet = new HashSet<>(this.strainmap.keySet());
 		Set<BlockPos> possiblyDestroyed = new HashSet<>(this.strainmap.keySet());
@@ -209,19 +197,6 @@ public class AxisStrain {
 			if (e.getValue().getBlastResistance() != 0) System.out.println(e.getValue());
 		}
 		
-//		for (BlockFace bf : originalForce.keySet()) { // Rayがhitした面の判定
-//			BlockPos pos = bf.getBlockpos();
-//			if (destroyed.contains(pos)) continue;
-//			double dir = originalForce.getDouble(bf);
-//			if (BSExplosionBase.isZero(dir)) continue;
-//			dir = dir > 0 ? 1 : -1;
-//			if (this.isFragile(dir, pos)) {
-//				notCheckedYet.remove(pos);
-//				possiblyDestroyed.remove(pos);
-//				destroyed.add(pos);
-//			}
-//		}
-		System.out.println("remaining=" + this.remainingForce.size());
 		for (BlockFace bf : this.remainingForce.keySet()) {
 			BlockPos pos = bf.getBlockpos();
 			if (destroyed.contains(pos)) continue;
@@ -231,7 +206,7 @@ public class AxisStrain {
 			destroyed.add(pos);
 		}
 		
-		System.out.println("may not be desroyed = " + notCheckedYet.size() + " destroyed = " + destroyed.size());
+		System.out.println(this.axis + " remaining=" + this.remainingForce.size() + " may not be desroyed = " + notCheckedYet.size() + " destroyed = " + destroyed.size());
 		
 		Iterator<BlockPos> itr = notCheckedYet.iterator();
 		while (!notCheckedYet.isEmpty()) {
@@ -314,21 +289,6 @@ public class AxisStrain {
 				!this.getStrainStatus(pos.offset(face)).isElastoPasticDeforming(face.getOpposite());
 	}
 	
-	private boolean isFragile(double dir, BlockPos pos) {
-		BlockStrain strain = this.getStrainStatus(pos);
-		
-		boolean flag = pos.getZ() == 11 && pos.getY() >= 63 && pos.getX() >= 38 && pos.getX() <= 41;
-//		flag = true;
-		if (flag) System.out.println("****pos = " + pos + " cap = " + strain.hasReachedCapacity());
-		
-		if (!strain.hasReachedCapacity()) return false;
-		for (EnumFacing facing : EnumFacing.VALUES) {
-			if (flag) System.out.println("facing=" + facing + " con=" + this.isFaceConnected(pos, facing) + " trans=" + strain.getTransmittingForce(facing) + " dir=" + dir );
-			if (this.isFaceConnected(pos, facing) && strain.getTransmittingForce(facing)*dir > -BSExplosionBase.ERR) return false;
-		}
-		return true;
-	}
-	
 	public Stream<PressureRay> rayRefAndTr() {
 		return this.collidedRays.entrySet().parallelStream().flatMap(e -> {
 			BlockFace bf = e.getKey();
@@ -375,6 +335,7 @@ public class AxisStrain {
 			return this.stack.isEmpty();
 		}
 		
+		@SuppressWarnings("unused")
 		public int size() {
 			return this.posset.size();
 		}

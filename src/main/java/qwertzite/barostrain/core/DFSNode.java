@@ -8,6 +8,7 @@ public class DFSNode {
 	private final BlockPos pos;
 	private final EnumFacing forceCameFrom;
 	private EnumFacing prevFacing;
+	private int faceIndex = 0;
 	private final int depth;
 	private double remainingFlowCap;
 	
@@ -38,17 +39,20 @@ public class DFSNode {
 	public EnumFacing getPrevFacing() {
 		return prevFacing;
 	}
-
-	public void setPrevFacing(EnumFacing prevFacing) {
-		this.prevFacing = prevFacing;
-	}
 	
 	public EnumFacing getNextFacing() {
-		int ni;
-		if (prevFacing == null) ni = 0;
-		else ni = this.prevFacing.getIndex() + 1;
-		if (ni >= EnumFacing.VALUES.length) return null;
-		return this.prevFacing = EnumFacing.VALUES[ni];
+		if (prevFacing == null) return prevFacing = EnumFacing.UP; // １番目
+		if (prevFacing == EnumFacing.DOWN) return null; // 終わり
+		if (faceIndex >= 4) return prevFacing = EnumFacing.DOWN; // 最後
+
+		BlockPos pos = this.getPos();
+		int shift = faceIndex + (pos.getY() % 4) + (pos.getX() % 4) + (pos.getZ()%2)*2;
+		shift %= 4;
+		if (shift < 0) shift += 4;
+		int index = ((shift&0b1) ^ ((shift>>1)&0b1)) + (shift&0b10) - faceIndex;
+		if (index < 0) index += 4;
+		faceIndex++;
+		return EnumFacing.getHorizontal(index);
 	}
 
 	/**
