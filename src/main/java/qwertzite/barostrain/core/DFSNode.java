@@ -46,13 +46,17 @@ public class DFSNode {
 		if (faceIndex >= 4) return prevFacing = EnumFacing.DOWN; // 最後
 
 		BlockPos pos = this.getPos();
-		int shift = faceIndex + (pos.getY() % 4) + (pos.getX() % 4) + (pos.getZ()%2)*2;
+		int shift = (pos.getY() % 4) + (pos.getX() % 4) + (pos.getZ()%2)*2;
 		shift %= 4;
 		if (shift < 0) shift += 4;
-		int index = ((shift&0b1) ^ ((shift>>1)&0b1)) + (shift&0b10) - faceIndex;
+		int index;
+		if (shift == 2) index = 3;
+		else if (shift == 3) index = 2;
+		else { index = shift; }
+		index -= faceIndex;
 		if (index < 0) index += 4;
 		faceIndex++;
-		return EnumFacing.getHorizontal(index);
+		return this.prevFacing = EnumFacing.HORIZONTALS[index];
 	}
 
 	/**

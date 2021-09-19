@@ -117,6 +117,7 @@ public class AxisStrain {
 					
 					final double absorvingCap = this.canAbsorb(currentPos, flowReachedHere);
 					if (!BSExplosionBase.isZero(absorvingCap)) { // 現在のブロックが力を慣性力で吸収できる場合
+//						System.out.println("absorved " + currentPos + " " + absorvingCap);
 						reversed |= flowReachedHere * currentStrStat.getAbsorved() < - BSExplosionBase.ERR; // 反転時継続
 						forceAppliedByBlast -= absorvingCap;
 						currentStrStat.absorveForce(absorvingCap); // 慣性力での吸収
@@ -150,12 +151,13 @@ public class AxisStrain {
 							dfs.pop(); // 自分を取り除いておく．次に行くときは改めて push
 							for (EnumFacing f = currentNode.getNextFacing(); f != null; f = currentNode.getNextFacing()) {
 								BlockPos npos = currentPos.offset(f); // 次の場所の候補
+//								System.out.println(currentPos + " " + f + " " + npos);
 								if (dfs.includes(npos)) continue; // 探索中の場所の場合はスキップ
 								if (depth-1 <= searchedDepthMap.getInt(npos)) continue; // TODO: 逆流する場合は許容する
 								double maxFlowForFace = this.calcMaxFlowForFace(currentPos, f, flowReachedHere);
 //								System.out.println("face " + f + " pos " + currentPos);
 								if (BSExplosionBase.isZero(maxFlowForFace)) continue; // この面には力を伝える余力はない
-								
+//								System.out.println("next " + npos + " " + maxFlowForFace);
 								dfs.push(currentNode);
 								dfs.push(new DFSNode(npos, depth-1, maxFlowForFace, f.getOpposite())); // この面から伝えられる最大の力
 								break;
@@ -193,9 +195,9 @@ public class AxisStrain {
 		Set<BlockPos> possiblyDestroyed = new HashSet<>(this.strainmap.keySet());
 		Set<BlockPos> destroyed = new HashSet<>();
 		
-		for (Map.Entry<BlockPos, BlockStrain> e : this.strainmap.entrySet()) {
-			if (e.getValue().getBlastResistance() != 0) System.out.println(e.getValue());
-		}
+//		for (Map.Entry<BlockPos, BlockStrain> e : this.strainmap.entrySet()) {
+//			if (e.getValue().getBlastResistance() != 0) System.out.println(e.getValue());
+//		}
 		
 		for (BlockFace bf : this.remainingForce.keySet()) {
 			BlockPos pos = bf.getBlockpos();
@@ -206,7 +208,7 @@ public class AxisStrain {
 			destroyed.add(pos);
 		}
 		
-		System.out.println(this.axis + " remaining=" + this.remainingForce.size() + " may not be desroyed = " + notCheckedYet.size() + " destroyed = " + destroyed.size());
+//		System.out.println(this.axis + " remaining=" + this.remainingForce.size() + " may not be desroyed = " + notCheckedYet.size() + " destroyed = " + destroyed.size());
 		
 		Iterator<BlockPos> itr = notCheckedYet.iterator();
 		while (!notCheckedYet.isEmpty()) {
