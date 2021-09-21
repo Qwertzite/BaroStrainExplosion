@@ -89,7 +89,7 @@ public class AxisStrain {
 				double forceAppliedByBlast = this.remainingForce.getDouble(bf);
 				{
 					
-					double forceCap = -this.getStrainStatus(bf.getBlockpos()).calcFlowableForceForFaceLog(bf.getFacing(), -forceAppliedByBlast);
+					double forceCap = -this.getStrainStatus(bf.getBlockpos()).calcFlowableInitialForceForFace(bf.getFacing(), -forceAppliedByBlast);
 					if (BSExplosionBase.isZero(forceCap)) {
 						if (!BSExplosionBase.isZero(forceAppliedByBlast)) { remainingNext.put(bf, forceAppliedByBlast); }
 						continue;
@@ -99,6 +99,7 @@ public class AxisStrain {
 					DFSNode node0 = new DFSNode(strstat.getPos(), maxDepth, forceCap);
 					dfs.push(node0);
 				}
+//				System.out.println("bf " + bf.getBlockpos() + " " + bf.getFacing() + " " + forceAppliedByBlast);
 				
 				while (!dfs.isEmpty()) { // メインのDFS，力を伝えられる経路を探す
 					DFSNode currentNode = dfs.peek();
