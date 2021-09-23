@@ -9,10 +9,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumFacing.Axis;
 import net.minecraft.util.EnumFacing.AxisDirection;
@@ -34,14 +34,16 @@ import qwertzite.barostrain.core.BSExplosionBase.PressureRay;
  * @date 2021/04/01
  */
 public class AxisStrain {
+	public static final long BASE = 100000;
+	
 	private final BlockStrainSimulator simulator;
 	private final Axis axis;
 	
 	private final Map<BlockPos, BlockStrain> strainmap = Collections.synchronizedMap(new HashMap<>());
 	
 	private final Map<BlockFace, Set<PressureRay>> collidedRays = new HashMap<>();
-	private final Object2DoubleMap<BlockFace> initialForce = new Object2DoubleOpenHashMap<>();
-	private final Object2DoubleMap<BlockFace> remainingForce = new Object2DoubleOpenHashMap<>();
+	private final Object2LongMap<BlockFace> initialForce = new Object2LongOpenHashMap<>();
+	private final Object2LongMap<BlockFace> remainingForce = new Object2LongOpenHashMap<>();
 	
 	
 	public AxisStrain(BlockStrainSimulator simulator, Axis axis) {
@@ -55,8 +57,8 @@ public class AxisStrain {
 		if (!this.collidedRays.containsKey(bf)) this.collidedRays.put(bf, rays = new HashSet<>());
 		else rays = this.collidedRays.get(bf);
 		rays.add(ray);
-		force *= this.isDirPositive(face.getAxisDirection()) ? -1.0d : 1.0d;
-		double f = this.remainingForce.getDouble(bf) + force;
+		force *= this.isDirPositive(face.getAxisDirection()) ? -1 : 1;
+		long f = this.remainingForce.getLong(bf) + Math.round(force * BASE);
 		this.initialForce.put(bf, f);
 		this.remainingForce.put(bf, f);
 	}
@@ -82,14 +84,14 @@ public class AxisStrain {
 		while (masterFlag || reversed) { // これ以上探索最大深さを増やしても無駄な時に終了
 			masterFlag = false;
 			reversed = false;
-			Object2DoubleMap<BlockFace> remainingNext = new Object2DoubleOpenHashMap<>();
+			Object2LongMap<BlockFace> remainingNext = new Object2LongOpenHashMap<>();
 			for (BlockFace bf : this.remainingForce.keySet()) { // それぞれの圧力がかかった面に対して
 				
 				// ブロックが衝撃波から受けている力
-				double forceAppliedByBlast = this.remainingForce.getDouble(bf);
+				long forceAppliedByBlast = this.remainingForce.getLong(bf);
 				{
 					
-					double forceCap = -this.getStrainStatus(bf.getBlockpos()).calcFlowableInitialForceForFace(bf.getFacing(), -forceAppliedByBlast);
+					long forceCap = -this.getStrainStatus(bf.getBlockpos()).calcFlowableInitialForceForFace(bf.getFacing(), -forceAppliedByBlast);
 					if (BSExplosionBase.isZero(forceCap)) {
 						if (!BSExplosionBase.isZero(forceAppliedByBlast)) { remainingNext.put(bf, forceAppliedByBlast); }
 						continue;
@@ -106,8 +108,8 @@ public class AxisStrain {
 					BlockPos currentPos = currentNode.getPos();
 					BlockStrain currentStrStat = this.getStrainStatus(currentPos);
 					
-					double flowReachedHere = currentNode.getMaximumFlow(); // 今いる場所まで流せる最大の力
-					if (BSExplosionBase.isZero(flowReachedHere)) {
+					long flowReachedHere = currentNode.getMaximumFlow(); // 今いる場所まで流せる最大の力
+					if (flowReachedHere == 0) { // if (BSExplosionBase.isZero(flowReachedHere)) {
 						dfs.pop(); // 自分のところまで流れてくる力の最大値が0だったら中止する．
 						continue;
 					}
@@ -116,15 +118,15 @@ public class AxisStrain {
 					Object2IntMap<BlockPos> searchedDepthMap = flowReachedHere > 0 ? pos2depthP : pos2depthN;
 					searchedDepthMap.put(currentPos, currentNode.getDepth());
 					
-					final double absorvingCap = this.canAbsorb(currentPos, flowReachedHere);
+					final long absorvingCap = this.canAbsorb(currentPos, flowReachedHere);
 					if (!BSExplosionBase.isZero(absorvingCap)) { // 現在のブロックが力を慣性力で吸収できる場合
 //						System.out.println("absorved " + currentPos + " " + absorvingCap);
-						reversed |= flowReachedHere * currentStrStat.getAbsorved() < - BSExplosionBase.ERR; // 反転時継続
+						reversed |= flowReachedHere * currentStrStat.getAbsorved() < 0; // 反転時継続
 						forceAppliedByBlast -= absorvingCap;
 						currentStrStat.absorveForce(absorvingCap); // 慣性力での吸収
 						for (Iterator<DFSNode> itr = dfs.iterator(); itr.hasNext();) {
 							DFSNode n = itr.next();
-							double ncap = n.getMaximumFlow() - absorvingCap;
+							long ncap = n.getMaximumFlow() - absorvingCap;
 							n.setMaximumFlow(ncap);
 							if (BSExplosionBase.isZero(ncap)) { // これによって，流れを受け取れるところまで戻る．
 								searchedDepthMap.removeInt(n.getPos());
@@ -155,7 +157,7 @@ public class AxisStrain {
 //								System.out.println(currentPos + " " + f + " " + npos);
 								if (dfs.includes(npos)) continue; // 探索中の場所の場合はスキップ
 								if (depth-1 <= searchedDepthMap.getInt(npos)) continue; // TODO: 逆流する場合は許容する
-								double maxFlowForFace = this.calcMaxFlowForFace(currentPos, f, flowReachedHere);
+								long maxFlowForFace = this.calcMaxFlowForFace(currentPos, f, flowReachedHere);
 //								System.out.println("face " + f + " pos " + currentPos);
 								if (BSExplosionBase.isZero(maxFlowForFace)) continue; // この面には力を伝える余力はない
 //								System.out.println("next " + npos + " " + maxFlowForFace);
@@ -203,7 +205,8 @@ public class AxisStrain {
 		for (BlockFace bf : this.remainingForce.keySet()) {
 			BlockPos pos = bf.getBlockpos();
 			if (destroyed.contains(pos)) continue;
-			if (BSExplosionBase.isZero(this.remainingForce.getDouble(bf))) continue;
+			if (this.remainingForce.getLong(bf) == 0) continue;
+//			if (BSExplosionBase.isZero(this.remainingForce.getLong(bf))) continue;
 			notCheckedYet.remove(pos);
 			possiblyDestroyed.remove(pos);
 			destroyed.add(pos);
@@ -269,22 +272,23 @@ public class AxisStrain {
 	 * @param applied
 	 * @return
 	 */
-	private double canAbsorb(BlockPos pos, double applied) {
+	private long canAbsorb(BlockPos pos, long applied) {
 		BlockStrain stat = this.getStrainStatus(pos);
 		return stat.getAbsorveable(applied);
 	}
 	
 	/** 指定したブロックから，faceの方向の境界に力を伝える．受け取るがわの面の処理も行ってくれる */
-	private void flowForceThroughFace(BlockPos pos, EnumFacing face, double force) {
+	private void flowForceThroughFace(BlockPos pos, EnumFacing face, long force) {
 		this.getStrainStatus(pos)             .flowForceThroughFace(face, force);
 		this.getStrainStatus(pos.offset(face)).flowForceThroughFace(face.getOpposite(), -force);
 	}
 	
 	/** 受け手，送り手，両方の上限に合わせて上限を確認する */
-	private double calcMaxFlowForFace(BlockPos pos, EnumFacing face, double flow) {
-		flow = this.getStrainStatus(pos).calcFlowableForceForFace(face, flow);
-		flow = -this.getStrainStatus(pos.offset(face)).calcFlowableForceForFace(face.getOpposite(), -flow);
-		return flow;
+	private long calcMaxFlowForFace(BlockPos pos, EnumFacing face, long flow) {
+		long ret;
+		ret = this.getStrainStatus(pos).calcFlowableForceForFace(face, flow);
+		ret = -this.getStrainStatus(pos.offset(face)).calcFlowableForceForFace(face.getOpposite(), -ret);
+		return ret*flow < 0 ? 0 : flow;
 	}
 	
 	private boolean isFaceConnected(BlockPos pos, EnumFacing face) {
@@ -296,8 +300,8 @@ public class AxisStrain {
 		return this.collidedRays.entrySet().parallelStream().flatMap(e -> {
 			BlockFace bf = e.getKey();
 			Set<PressureRay> rays = e.getValue(); 
-			double initial = this.initialForce.getDouble(bf);
-			double remain = this.remainingForce.containsKey(bf) ? this.remainingForce.getDouble(bf) : 0.0f;
+			double initial = this.initialForce.getLong(bf);
+			double remain = this.remainingForce.containsKey(bf) ? this.remainingForce.getLong(bf) : 0.0f;
 			double tr = BSExplosionBase.isZero(initial) ? 0.0d : remain / initial;
 			
 			return rays.parallelStream().flatMap(r -> r.reflection(tr, initial - remain));

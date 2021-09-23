@@ -6,7 +6,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumFacing.Axis;
 import net.minecraft.util.EnumFacing.AxisDirection;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
+import qwertzite.barostrain.util.BsMath;
 
 /**
  * あるブロックの爆破耐性，現在それぞれの面に掛かっている力，働いている慣性力を記録する<br>
@@ -18,42 +18,43 @@ import net.minecraft.util.math.MathHelper;
 public class BlockStrain {
 	private BlockPos pos;
 	private Axis axis;
-	private double blastResistance = -1;
-	private double hardness;
+	private long blastResistance = -1;
+	private long hardness;
 	
-	private double absorved = 0.0d;
+	private long absorved = 0;
 	/** その面が相手に及ぼしている力．<br>
 	 * 正なら，その軸の正の向きの力を及ぼしている (自分は負の向きの反力を受けている)
 	 */
-	private EnumMap<EnumFacing, Double> transmittingForce = new EnumMap<>(EnumFacing.class);
+	private EnumMap<EnumFacing, Long> transmittingForce = new EnumMap<>(EnumFacing.class);
 	
 	public BlockStrain(BlockPos pos, Axis axis, double resistance, double hardness) {
 		this.pos = pos;
 		this.axis = axis;
-		this.blastResistance = resistance;
-		this.hardness = hardness;
+		this.blastResistance = Math.round(resistance*AxisStrain.BASE);
+		this.hardness = Math.round(hardness*AxisStrain.BASE);
 	}
 	
 	public BlockPos getPos() { return this.pos; }
 	
-	public double getAbsorveable(double applied) {
-		return MathHelper.clamp(applied, -this.blastResistance / 10.0d - this.absorved, this.blastResistance/10-this.absorved);
+	public long getAbsorveable(long applied) {
+		long ret = BsMath.clamp(applied, -this.blastResistance / 10 - this.absorved, this.blastResistance/10-this.absorved);
+		return ret * applied < 0 ? 0 : ret;
 	}
 	
 	/** どちらか一方の上限に達しているか */
 	public boolean hasReachedCapacity() {
-		return absorved <= -this.blastResistance / 10.0d + BSExplosionBase.ERR || this.blastResistance / 10.0d - BSExplosionBase.ERR <= absorved;
+		return absorved <= -this.blastResistance / 10 || this.blastResistance/ 10 <= absorved;
 	}
 	
 	public boolean isElastoPasticDeforming(EnumFacing face) {
-		double force = this.transmittingForce.getOrDefault(face, 0.0d);
-		final double ERR = BSExplosionBase.ERR;
-		double maxLim = this.getMaxLim(face);
-		double minLim = this.getMinLim(face);
-		return force <= minLim + ERR || maxLim - ERR <= force;
+		long force = this.transmittingForce.getOrDefault(face, 0L);
+//		final long ERR = BSExplosionBase.ERR;
+		long maxLim = this.getMaxLim(face);
+		long minLim = this.getMinLim(face);
+		return force <= minLim || maxLim <= force;
 	}
 	
-	public void absorveForce(double force) {
+	public void absorveForce(long force) {
 		this.absorved += force;
 	}
 	
@@ -63,22 +64,24 @@ public class BlockStrain {
 	 * @param applied
 	 * @return
 	 */
-	public double calcFlowableInitialForceForFace(EnumFacing face, double applied) {
-		double current = this.transmittingForce.getOrDefault(face, 0.0d);
-		double maxLim = this.getMaxLim(face)*2 - current;
-		double minLim = this.getMinLim(face)*2 - current;
+	public long calcFlowableInitialForceForFace(EnumFacing face, long applied) {
+		long current = this.transmittingForce.getOrDefault(face, 0L);
+		long maxLim = this.getMaxLim(face)*2 - current;
+		long minLim = this.getMinLim(face)*2 - current;
 //		System.out.println("flowable " + this.getPos() + " " + current + " " + this.getMinLim(face) + " " + this.getMaxLim(face) + " " + applied);
-		return MathHelper.clamp(applied, minLim, maxLim);
+		long ret = BsMath.clamp(applied, minLim, maxLim);
+		return ret * applied < 0 ? 0 : ret;
 	}
 
-	public double calcFlowableForceForFace(EnumFacing face, double applied) {
-		double current = this.transmittingForce.getOrDefault(face, 0.0d);
-		double maxLim = this.getMaxLim(face) - current;
-		double minLim = this.getMinLim(face) - current;
-		return MathHelper.clamp(applied, minLim, maxLim);
+	public long calcFlowableForceForFace(EnumFacing face, long applied) {
+		long current = this.transmittingForce.getOrDefault(face, 0L);
+		long maxLim = this.getMaxLim(face) - current;
+		long minLim = this.getMinLim(face) - current;
+		long ret = BsMath.clamp(applied, minLim, maxLim);
+		return ret * applied < 0 ? 0 : ret;
 	}
 	
-	private double getMaxLim(EnumFacing facing) {
+	private long getMaxLim(EnumFacing facing) {
 		if (facing.getAxis() == this.axis) {
 			return facing.getAxisDirection() == AxisDirection.POSITIVE ?
 					this.blastResistance :
@@ -88,7 +91,7 @@ public class BlockStrain {
 		}
 	}
 	
-	private double getMinLim(EnumFacing facing) {
+	private long getMinLim(EnumFacing facing) {
 		if (facing.getAxis() == this.axis) {
 			return facing.getAxisDirection() == AxisDirection.POSITIVE ?
 					- this.hardness :
@@ -103,26 +106,27 @@ public class BlockStrain {
 	 * @param direction
 	 * @param force
 	 */
-	public void flowForceThroughFace(EnumFacing direction, double force) {
-		this.transmittingForce.put(direction, this.transmittingForce.getOrDefault(direction, 0.0d) + force);
+	public void flowForceThroughFace(EnumFacing direction, long force) {
+		this.transmittingForce.put(direction, this.transmittingForce.getOrDefault(direction, 0L) + force);
 	}
 	
-	public double getAbsorved() { return this.absorved; }
+	public long getAbsorved() { return this.absorved; }
 	
-	public double getTransmittingForce(EnumFacing direction) {
-		return this.transmittingForce.getOrDefault(direction, 0.0d);
+	public long getTransmittingForce(EnumFacing direction) {
+		return this.transmittingForce.getOrDefault(direction, 0L);
 	}
 	
-	public double getBlastResistance() { return this.blastResistance; }
+	/** multiplied by BASE */
+	public long getBlastResistance() { return this.blastResistance; }
 	
 	@Override
 	public String toString() {
 		return this.pos + ",res=" + this.blastResistance + ",hrd=" + this.hardness + ",abs=" + absorved + " " 
-				+ "D:" + this.transmittingForce.getOrDefault(EnumFacing.DOWN, 0.0d) + " "
-				+ "U:" + this.transmittingForce.getOrDefault(EnumFacing.UP, 0.0d) + " "
-				+ "N:" + this.transmittingForce.getOrDefault(EnumFacing.NORTH, 0.0d) + " "
-				+ "S:" + this.transmittingForce.getOrDefault(EnumFacing.SOUTH, 0.0d) + " "
-				+ "W:" + this.transmittingForce.getOrDefault(EnumFacing.WEST, 0.0d) + " "
-				+ "E:" + this.transmittingForce.getOrDefault(EnumFacing.EAST, 0.0d);
+				+ "D:" + this.transmittingForce.getOrDefault(EnumFacing.DOWN, 0L) + " "
+				+ "U:" + this.transmittingForce.getOrDefault(EnumFacing.UP, 0L) + " "
+				+ "N:" + this.transmittingForce.getOrDefault(EnumFacing.NORTH, 0L) + " "
+				+ "S:" + this.transmittingForce.getOrDefault(EnumFacing.SOUTH, 0L) + " "
+				+ "W:" + this.transmittingForce.getOrDefault(EnumFacing.WEST, 0L) + " "
+				+ "E:" + this.transmittingForce.getOrDefault(EnumFacing.EAST, 0L);
 	}
 }
