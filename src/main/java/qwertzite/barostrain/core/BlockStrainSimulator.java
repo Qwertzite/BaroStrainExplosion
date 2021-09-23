@@ -190,6 +190,8 @@ public class BlockStrainSimulator {
 		for (BlockPos pos: newlyDestroyed) this.resistanceMap.remove(pos); // ついでに不要なキャッシュを消去
 		System.out.println("Newly destroyed: " + newlyDestroyed.size() + " affected blocks: " + this.affectedBlocks.size());
 		
+		// 塊ごとに集計，各方位毎に次のPressureRayを算出
+		
 		Set<PressureRay> result = Stream.concat(
 				this.pendingRays.parallelStream().flatMap(r -> r.nextStep()),
 				this.axis.values().parallelStream().flatMap(ax -> ax.rayRefAndTr())).collect(Collectors.toSet());

@@ -10,10 +10,10 @@ public class DFSNode {
 	private EnumFacing prevFacing;
 	private int faceIndex = 0;
 	private final int depth;
-	private double remainingFlowCap;
+	private long remainingFlowCap;
 	
 	
-	public DFSNode(BlockPos pos, int depth, double flowCap) {
+	public DFSNode(BlockPos pos, int depth, long flowCap) {
 		this(pos, depth, flowCap, null);
 	}
 	
@@ -24,7 +24,7 @@ public class DFSNode {
 	 * @param flowCap
 	 * @param forceCameFrom この位置から見てこちらの方向から力が伝わってきた．
 	 */
-	public DFSNode(BlockPos pos, int depth, double flowCap, EnumFacing forceCameFrom) {
+	public DFSNode(BlockPos pos, int depth, long flowCap, EnumFacing forceCameFrom) {
 		this.pos = pos;
 		this.forceCameFrom = forceCameFrom;
 		this.prevFacing = null;
@@ -63,11 +63,11 @@ public class DFSNode {
 	 * ここに至るまでの経路によって制限を受けた，ソースからここまで流れてくることのできる力の最大値
 	 * @return
 	 */
-	public double getMaximumFlow() {
+	public long getMaximumFlow() {
 		return remainingFlowCap;
 	}
 
-	public void setMaximumFlow(double forceCapacity) {
+	public void setMaximumFlow(long forceCapacity) {
 		this.remainingFlowCap = forceCapacity;
 	}
 	
