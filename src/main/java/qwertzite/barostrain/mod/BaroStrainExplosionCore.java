@@ -22,7 +22,9 @@ import qwertzite.barostrain.core.BSExplosionBase.PressureRay;
 import qwertzite.barostrain.core.BsExplosions;
 import qwertzite.barostrain.core.DFSNode;
 import qwertzite.barostrain.mod.test.CommandBSTest;
+import qwertzite.barostrain.mod.test.CommandBsMulti;
 import qwertzite.barostrain.util.BsModLog;
+import qwertzite.barostrain.util.TickScheduler;
 
 @Mod(modid = BaroStrainExplosionCore.MODID, name = BaroStrainExplosionCore.MOD_NAME, version = BaroStrainExplosionCore.VERSION)
 public class BaroStrainExplosionCore {
@@ -34,17 +36,21 @@ public class BaroStrainExplosionCore {
 	@Mod.Instance(MODID)
 	public static BaroStrainExplosionCore INSTANCE;
 	
+	public final TickScheduler scheduler = new TickScheduler();
+	
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		BsModLog.onPreInit(event, true);
 		BsExplosions.onInit(NetworkRegistry.INSTANCE.newSimpleChannel(MODID), 0);
 		MinecraftForge.EVENT_BUS.register(this);
+		MinecraftForge.EVENT_BUS.register(this.scheduler);
 	}
 	
 	@EventHandler
 	public void serverStarting(FMLServerStartingEvent event) {
 		event.registerServerCommand(new CommandExplosion());
 		event.registerServerCommand(new CommandBSTest());
+		event.registerServerCommand(new CommandBsMulti());
 		
 		DFSNode node = new DFSNode(new BlockPos(1,2,3), 0, 0);
 		System.out.println(node.getNextFacing());
