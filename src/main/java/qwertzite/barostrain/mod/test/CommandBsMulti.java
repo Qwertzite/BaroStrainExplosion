@@ -11,6 +11,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import qwertzite.barostrain.core.BsExplosions;
+import qwertzite.barostrain.mod.BaroStrainExplosionCore;
 import qwertzite.barostrain.mod.CommandExplosion;
 
 public class CommandBsMulti extends CommandBase {
@@ -56,11 +57,13 @@ public class CommandBsMulti extends CommandBase {
 		long nn = Math.round(dx*dz*p);
 		Random rand = new Random();
 		World world = sender.getEntityWorld();
-		for (long n = 0;n < nn; n--) {
+		for (long n = 0;n < nn; n++) {
 			double xi = x + rand.nextDouble()*dx;
 			double zi = z + rand.nextDouble()*dz;
-			BsExplosions.explode(world, null, xi, world.getHeight(MathHelper.floor(xi), MathHelper.floor(zi)) + h, zi, (float) s);
+			double yi = world.getHeight(MathHelper.floor(xi), MathHelper.floor(zi)) + h;
+			BaroStrainExplosionCore.INSTANCE.scheduler.add(n, () -> BsExplosions.explode(world, null, xi, yi, zi, (float) s));
 		}
+		BaroStrainExplosionCore.INSTANCE.scheduler.add(nn, () -> sender.sendMessage(new TextComponentString(String.format("Executed " + nn + " explosions."))));
 		sender.sendMessage(new TextComponentString(String.format("Executed " + nn + " explosions.")));
 		
 	}
