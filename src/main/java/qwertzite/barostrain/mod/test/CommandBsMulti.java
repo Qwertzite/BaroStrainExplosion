@@ -1,15 +1,19 @@
 package qwertzite.barostrain.mod.test;
 
+import java.util.Random;
+
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.CommandBlockBaseLogic;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.world.World;
 import qwertzite.barostrain.core.BsExplosions;
 import qwertzite.barostrain.mod.CommandExplosion;
 
-public class CommandBsBombardment extends CommandBase {
+public class CommandBsMulti extends CommandBase {
 
 	@Override
 	public String getName() {
@@ -44,8 +48,20 @@ public class CommandBsBombardment extends CommandBase {
 		double s = CommandExplosion.parseDouble(args[6]);
 		sender.sendMessage(new TextComponentString(String.format("Executing multiple explosions.")));
 		
-		
-//		BsExplosions.explode(sender.getEntityWorld(), null, x, y, z, (float) s);
+		if (s < 0) return;
+		double x = Math.min(x1, x2);
+		double z = Math.min(z1, z2);
+		double dx = Math.abs(x1 - x2);
+		double dz = Math.abs(z1 - z2);
+		long nn = Math.round(dx*dz*p);
+		Random rand = new Random();
+		World world = sender.getEntityWorld();
+		for (long n = 0;n < nn; n--) {
+			double xi = x + rand.nextDouble()*dx;
+			double zi = z + rand.nextDouble()*dz;
+			BsExplosions.explode(world, null, xi, world.getHeight(MathHelper.floor(xi), MathHelper.floor(zi)) + h, zi, (float) s);
+		}
+		sender.sendMessage(new TextComponentString(String.format("Executed " + nn + " explosions.")));
 		
 	}
 

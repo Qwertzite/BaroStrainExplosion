@@ -22,6 +22,7 @@ import qwertzite.barostrain.core.BSExplosionBase.PressureRay;
 import qwertzite.barostrain.core.BsExplosions;
 import qwertzite.barostrain.core.DFSNode;
 import qwertzite.barostrain.mod.test.CommandBSTest;
+import qwertzite.barostrain.mod.test.CommandBsMulti;
 import qwertzite.barostrain.util.BsModLog;
 
 @Mod(modid = BaroStrainExplosionCore.MODID, name = BaroStrainExplosionCore.MOD_NAME, version = BaroStrainExplosionCore.VERSION)
@@ -45,6 +46,7 @@ public class BaroStrainExplosionCore {
 	public void serverStarting(FMLServerStartingEvent event) {
 		event.registerServerCommand(new CommandExplosion());
 		event.registerServerCommand(new CommandBSTest());
+		event.registerServerCommand(new CommandBsMulti());
 		
 		DFSNode node = new DFSNode(new BlockPos(1,2,3), 0, 0);
 		System.out.println(node.getNextFacing());
