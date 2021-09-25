@@ -188,7 +188,7 @@ public class BlockStrainSimulator {
 		this.axis.values().parallelStream().forEach(e -> e.checkBlocksDestroyed(newlyDestroyed));
 		this.affectedBlocks.putAll(newlyDestroyed.parallelStream().collect(Collectors.toMap(pos -> pos, pos -> Vec3d.ZERO)));
 		for (BlockPos pos: newlyDestroyed) this.resistanceMap.remove(pos); // ついでに不要なキャッシュを消去
-		System.out.println("Newly destroyed: " + newlyDestroyed.size() + " affected blocks: " + this.affectedBlocks.size());
+//		System.out.println("Newly destroyed: " + newlyDestroyed.size() + " affected blocks: " + this.affectedBlocks.size());
 		
 		// 塊ごとに集計，各方位毎に次のPressureRayを算出
 		
