@@ -268,7 +268,7 @@ public class BSExplosionBase extends Explosion {
 		public static final Set<PressureRay> RAYS = Collections.synchronizedSet(new HashSet<>());
 		
 		public static Set<PressureRay> seedRays(Vec3d origin, float intencity, World world) {
-			float division = 1.0f * 5f;
+			float division = 1.0f * 15f; // 強度の係数 バニラと大体の破壊力を揃える 12 ~ 
 			return Stream.of(ICOSAHEDRON).parallel()
 					.map(vs -> new PressureRay(intencity, division, origin, vs, world))
 					.collect(Collectors.toSet());
@@ -363,7 +363,7 @@ public class BSExplosionBase extends Explosion {
 			return this.pressureAt(this.distFromPrev(absPos));
 		}
 		
-		public double pressureAt(double distFromFrom) { // これが間違っている？
+		public double pressureAt(double distFromFrom) {
 			final double P = MathHelper.sqrt(intencity);
 			final double Q = 0.5d*P + 0.5d;
 			final double x1 = 2*Q;

@@ -66,7 +66,7 @@ public class CommandBsMulti extends CommandBase {
 		long nn = Math.round(dx*dz*p);
 		Random rand = new Random();
 		World world = sender.getEntityWorld();
-		
+
 		if (!flag.contains("v")) {
 			for (long n = 0;n < nn; n++) {
 				double xi = x + rand.nextDouble()*dx;
