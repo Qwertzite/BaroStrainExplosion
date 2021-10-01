@@ -4,6 +4,7 @@ import java.util.PriorityQueue;
 
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent.WorldTickEvent;
 import qwertzite.barostrain.util.function.Action;
 
 public class TickScheduler {
@@ -12,7 +13,7 @@ public class TickScheduler {
 	private long index = Long.MIN_VALUE;
 	
 	@SubscribeEvent
-	public void onTick(TickEvent event) {
+	public void onTick(WorldTickEvent event) {
 		if (event.phase == TickEvent.Phase.START) {
 			while (!queue.isEmpty() && queue.peek().index <= index) {
 				queue.poll().action.execute();
