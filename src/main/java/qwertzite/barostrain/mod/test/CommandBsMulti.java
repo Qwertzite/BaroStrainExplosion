@@ -78,8 +78,17 @@ public class CommandBsMulti extends CommandBase {
 			for (long n = 0;n < nn; n++) {
 				double xi = x + rand.nextDouble()*dx;
 				double zi = z + rand.nextDouble()*dz;
-				double yi = world.getHeight(MathHelper.floor(xi), MathHelper.floor(zi)) + h;
-				BaroStrainExplosionCore.INSTANCE.scheduler.add(n*4, () -> sender.getEntityWorld().newExplosion(null, xi, yi, zi, (float) s, false, true));
+//				double yi = world.getHeight(MathHelper.floor(xi-0.45), MathHelper.floor(zi-0.45));
+//				double tmp = world.getHeight(MathHelper.floor(xi+0.45), MathHelper.floor(zi-0.45));
+//				if (yi < tmp) yi = tmp;
+//				tmp = world.getHeight(MathHelper.floor(xi-0.45), MathHelper.floor(zi+0.45));
+//				if (yi < tmp) yi = tmp;
+//				tmp = world.getHeight(MathHelper.floor(xi+0.45), MathHelper.floor(zi+0.45));
+//				if (yi < tmp) yi = tmp;
+//				yi += h;
+//				double yy = yi;
+				double yy = world.getHeight(MathHelper.floor(xi), MathHelper.floor(zi));
+				BaroStrainExplosionCore.INSTANCE.scheduler.add(n*4, () -> sender.getEntityWorld().newExplosion(null, xi, yy, zi, (float) s, false, true));
 			}
 		}
 		BaroStrainExplosionCore.INSTANCE.scheduler.add(nn*4, () -> sender.sendMessage(new TextComponentString(String.format("Executed " + (nn) + " explosions."))));

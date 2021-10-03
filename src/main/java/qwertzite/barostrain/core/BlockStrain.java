@@ -84,22 +84,26 @@ public class BlockStrain {
 	private long getMaxLim(EnumFacing facing) {
 		if (facing.getAxis() == this.axis) {
 			return facing.getAxisDirection() == AxisDirection.POSITIVE ?
-					this.blastResistance :
-					this.hardness;
+					this.getCompressiveStress():
+					this.getTensileStress();
 		} else {
-			return this.hardness / 2;
+			return this.getShearingStress();
 		}
 	}
 	
 	private long getMinLim(EnumFacing facing) {
 		if (facing.getAxis() == this.axis) {
 			return facing.getAxisDirection() == AxisDirection.POSITIVE ?
-					- this.hardness :
-					- this.blastResistance;
+					- this.getTensileStress() :
+					- this.getCompressiveStress();
 		} else {
-			return - this.hardness / 2;
+			return - this.getShearingStress();
 		}
 	}
+	
+	private long getCompressiveStress() { return this.blastResistance; }
+	private long getTensileStress() { return this.hardness / 2; }
+	private long getShearingStress() { return this.hardness / 4; }
 
 	/** 
 	 * その面が (相手に) 及ぼしている力を加算する
