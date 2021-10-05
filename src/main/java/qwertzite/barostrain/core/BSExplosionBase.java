@@ -136,11 +136,14 @@ public class BSExplosionBase extends Explosion {
 				this.world.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, (ax + this.x) / 2.0D,
 						(ay + this.y) / 2.0D, (az + this.z) / 2.0D, nx, ny, nz);
 				this.world.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, ax, ay, az, nx, ny, nz);
-				for (int i = 0; i < 16; i++) {
-					this.world.spawnParticle(EnumParticleTypes.BLOCK_CRACK,
-							(float) blockpos.getX() + this.world.rand.nextFloat(),
-							(float) blockpos.getY() + this.world.rand.nextFloat(),
-							(float) blockpos.getZ() + this.world.rand.nextFloat(), dir.x, dir.y, dir.z, Block.getStateId(iblockstate));
+				if (iblockstate.getMaterial() != Material.AIR) {
+					int blockstateid = Block.getStateId(iblockstate);
+					for (int i = 0; i < 16; i++) {
+						this.world.spawnParticle(EnumParticleTypes.BLOCK_CRACK,
+								(float) blockpos.getX() + this.world.rand.nextFloat(),
+								(float) blockpos.getY() + this.world.rand.nextFloat(),
+								(float) blockpos.getZ() + this.world.rand.nextFloat(), dir.x, dir.y, dir.z, blockstateid);
+					}
 				}
 			}
 
