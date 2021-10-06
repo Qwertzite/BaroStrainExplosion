@@ -37,13 +37,13 @@ public class BlockStrain {
 	public BlockPos getPos() { return this.pos; }
 	
 	public long getAbsorveable(long applied) {
-		long ret = BsMath.clamp(applied, -this.blastResistance / 10 - this.absorved, this.blastResistance/10-this.absorved);
+		long ret = BsMath.clamp(applied, -this.getInertialCapacity() - this.absorved, this.getInertialCapacity()-this.absorved);
 		return ret * applied < 0 ? 0 : ret;
 	}
 	
 	/** どちらか一方の上限に達しているか */
 	public boolean hasReachedCapacity() {
-		return absorved <= -this.blastResistance / 10 || this.blastResistance/ 10 <= absorved;
+		return absorved <= -this.getInertialCapacity() || this.getInertialCapacity() <= absorved;
 	}
 	
 	public boolean isElastoPasticDeforming(EnumFacing face) {
@@ -101,6 +101,7 @@ public class BlockStrain {
 		}
 	}
 	
+	private long getInertialCapacity() { return this.blastResistance / 16; }
 	private long getCompressiveStress() { return this.blastResistance; }
 	private long getTensileStress() { return this.hardness / 2; }
 	private long getShearingStress() { return this.hardness / 4; }
