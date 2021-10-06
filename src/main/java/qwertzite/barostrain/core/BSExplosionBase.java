@@ -271,7 +271,7 @@ public class BSExplosionBase extends Explosion {
 		public static final Set<PressureRay> RAYS = Collections.synchronizedSet(new HashSet<>());
 		
 		public static Set<PressureRay> seedRays(Vec3d origin, float intencity, World world) {
-			float division = 1.0f * 15f; // 強度の係数 バニラと大体の破壊力を揃える 12 ~ 
+			float division = 1.0f * 20f; // 強度の係数 バニラと大体の破壊力を揃える 12 ~ 
 			return Stream.of(ICOSAHEDRON).parallel()
 					.map(vs -> new PressureRay(intencity, division, origin, vs, world))
 					.collect(Collectors.toSet());

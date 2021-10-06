@@ -23,6 +23,7 @@ import qwertzite.barostrain.core.BsExplosions;
 import qwertzite.barostrain.core.DFSNode;
 import qwertzite.barostrain.mod.test.CommandBSTest;
 import qwertzite.barostrain.mod.test.CommandBsMulti;
+import qwertzite.barostrain.mod.test.CommandExplosion;
 import qwertzite.barostrain.util.BsModLog;
 import qwertzite.barostrain.util.TickScheduler;
 
