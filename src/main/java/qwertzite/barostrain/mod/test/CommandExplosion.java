@@ -1,10 +1,14 @@
-package qwertzite.barostrain.mod;
+package qwertzite.barostrain.mod.test;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.CommandBlockBaseLogic;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
 import qwertzite.barostrain.core.BSExplosionBase;
 import qwertzite.barostrain.core.BsExplosions;
@@ -52,6 +56,14 @@ public class CommandExplosion extends CommandBase {
 		double y = CommandExplosion.parseDouble(args[2]);
 		double z = CommandExplosion.parseDouble(args[3]);
 		double s = CommandExplosion.parseDouble(args[4]);
+		Set<String> options = new HashSet<>();
+		for (String ss : args) { options.add(ss.toLowerCase()); }
+		if (options.contains("@p")) {
+			Vec3d pos = sender.getPositionVector();
+			x = pos.x;
+			y += pos.y;
+			z = pos.z;
+		}
 		sender.getEntityWorld().newExplosion(null, x, y, z, (float) s, false, true);
 	}
 	
@@ -60,6 +72,14 @@ public class CommandExplosion extends CommandBase {
 		double y = CommandExplosion.parseDouble(args[2]);
 		double z = CommandExplosion.parseDouble(args[3]);
 		double s = CommandExplosion.parseDouble(args[4]);
+		Set<String> options = new HashSet<>();
+		for (String ss : args) { options.add(ss.toLowerCase()); }
+		if (options.contains("@p")) {
+			Vec3d pos = sender.getPositionVector();
+			x = pos.x;
+			y += pos.y;
+			z = pos.z;
+		}
 		sender.sendMessage(new TextComponentString(String.format("Causing an explosion at %f, %f, %f with strength %f.", x, y, z, s)));
 		BsExplosions.explode(sender.getEntityWorld(), null, x, y, z, (float) s);
 	}

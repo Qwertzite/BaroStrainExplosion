@@ -14,7 +14,6 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import qwertzite.barostrain.core.BsExplosions;
 import qwertzite.barostrain.mod.BaroStrainExplosionCore;
-import qwertzite.barostrain.mod.CommandExplosion;
 
 public class CommandBsMulti extends CommandBase {
 	
