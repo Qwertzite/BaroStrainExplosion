@@ -103,8 +103,8 @@ public class BlockStrain {
 	
 	private long getInertialCapacity() { return this.blastResistance / 16; }
 	private long getCompressiveStress() { return this.blastResistance; }
-	private long getTensileStress() { return this.hardness / 2; }
-	private long getShearingStress() { return this.hardness / 4; }
+	private long getTensileStress() { return this.hardness / 2; } // 想定の1/2
+	private long getShearingStress() { return this.hardness / 2; }
 
 	/** 
 	 * その面が (相手に) 及ぼしている力を加算する
