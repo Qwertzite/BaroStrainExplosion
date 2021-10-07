@@ -1,4 +1,4 @@
-package qwertzite.barostrain.mod.test;
+package qwertzite.barostrain.mod.command;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;

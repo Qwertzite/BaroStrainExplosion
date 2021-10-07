@@ -8,7 +8,6 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -19,11 +18,11 @@ import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import qwertzite.barostrain.core.BSExplosionBase;
 import qwertzite.barostrain.core.BSExplosionBase.PressureRay;
+import qwertzite.barostrain.mod.command.CommandBSTest;
+import qwertzite.barostrain.mod.command.CommandBsMulti;
+import qwertzite.barostrain.mod.command.CommandExplosion;
+import qwertzite.barostrain.mod.command.CommandGenStructure;
 import qwertzite.barostrain.core.BsExplosions;
-import qwertzite.barostrain.core.DFSNode;
-import qwertzite.barostrain.mod.test.CommandBSTest;
-import qwertzite.barostrain.mod.test.CommandBsMulti;
-import qwertzite.barostrain.mod.test.CommandExplosion;
 import qwertzite.barostrain.util.BsModLog;
 import qwertzite.barostrain.util.TickScheduler;
 
@@ -52,16 +51,7 @@ public class BaroStrainExplosionCore {
 		event.registerServerCommand(new CommandExplosion());
 		event.registerServerCommand(new CommandBSTest());
 		event.registerServerCommand(new CommandBsMulti());
-		
-		DFSNode node = new DFSNode(new BlockPos(1,2,3), 0, 0);
-		System.out.println(node.getNextFacing());
-		System.out.println(node.getNextFacing());
-		System.out.println(node.getNextFacing());
-		System.out.println(node.getNextFacing());
-		System.out.println(node.getNextFacing());
-		System.out.println(node.getNextFacing());
-		System.out.println(node.getNextFacing());
-		System.out.println(node.getNextFacing());
+		event.registerServerCommand(new CommandGenStructure());
 	}
 	
 //	@SubscribeEvent

@@ -1,4 +1,4 @@
-package qwertzite.barostrain.mod.test;
+package qwertzite.barostrain.mod.command;
 
 import java.util.HashMap;
 import java.util.Map;
