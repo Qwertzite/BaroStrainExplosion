@@ -22,6 +22,7 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityTNTPrimed;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.SoundEvents;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
@@ -45,6 +46,8 @@ public class BSExplosionBase extends Explosion {
 	private final Entity exploder;
 //	private final float size;
 	private final Map<BlockPos, Vec3d> affectedBlockBlasts;
+	private final Set<BlockPos> wiggledBlocks;
+	private final Set<BlockPos> hitBlocks;
 	private final Map<EntityPlayer, Vec3d> playerKnockbackMap;
 	private final Vec3d position;
 	
@@ -57,15 +60,20 @@ public class BSExplosionBase extends Explosion {
 //	}
 
 	@SideOnly(Side.CLIENT)
-	public BSExplosionBase(World worldIn, Entity entityIn, double x, double y, double z, float size, Map<BlockPos, Vec3d> affectedPositions) {
+	public BSExplosionBase(World worldIn, Entity entityIn, double x, double y, double z, float size,
+			Map<BlockPos, Vec3d> affectedPositions, Set<BlockPos> wiggledBlocks, Set<BlockPos> hitBlocks) {
 		this(worldIn, entityIn, x, y, z, size);
 		this.affectedBlockBlasts.putAll(affectedPositions);
+		this.wiggledBlocks.addAll(wiggledBlocks);
+		this.hitBlocks.addAll(hitBlocks);
 	}
 
 	public BSExplosionBase(World worldIn, Entity entityIn, double x, double y, double z, float intencity) {
 		super(worldIn, entityIn, x, y, z, intencity, false, true);
 //		this.random = new Random();
 		this.affectedBlockBlasts = new HashMap<>();
+		this.wiggledBlocks = new HashSet<>();
+		this.hitBlocks = new HashSet<>();
 		this.playerKnockbackMap = Maps.<EntityPlayer, Vec3d>newHashMap();
 		this.world = worldIn;
 		this.exploder = entityIn;
@@ -93,6 +101,8 @@ public class BSExplosionBase extends Explosion {
 		}
 		
 		this.affectedBlockBlasts.putAll(blockStrain.getBlockBlastSpeed());
+		this.wiggledBlocks.addAll(blockStrain.getWiggledBlocks());
+		this.hitBlocks.addAll(blockStrain.getHitBlocks());
 	}
 
 	/**
@@ -106,9 +116,25 @@ public class BSExplosionBase extends Explosion {
 				(1.0F + (this.world.rand.nextFloat() - this.world.rand.nextFloat()) * 0.2F) * 0.7F);
 		
 		if (this.intencity >= 2.0F) {
-			this.world.spawnParticle(EnumParticleTypes.EXPLOSION_HUGE, this.x, this.y, this.z, 1.0D, 0.0D, 0.0D);
+			this.world.spawnParticle(EnumParticleTypes.EXPLOSION_HUGE, this.x, this.y, this.z, 1.0D, 0.0D, 0.0D); // 強度に応じて大きさが変わるものを独自実装する？
 		} else {
 			this.world.spawnParticle(EnumParticleTypes.EXPLOSION_LARGE, this.x, this.y, this.z, 1.0D, 0.0D, 0.0D);
+		}
+		
+		if (spawnParticles) {
+			for (int i = Math.round((this.intencity*this.intencity*this.intencity + 1) / 16); i >= 0; i--) {
+				double px = this.world.rand.nextFloat()*2 - 1;
+				double py = this.world.rand.nextFloat()*2 - 1;
+				double pz = this.world.rand.nextFloat()*2 - 1;
+				double sq = MathHelper.sqrt(px*px + py*py + pz*pz);
+				if (sq == 0) continue;
+				double vel = this.intencity * (double) (this.world.rand.nextFloat() * this.world.rand.nextFloat() + 0.1F) / 20 / sq;
+				px *= vel;
+				py *= vel;
+				pz *= vel;
+				this.world.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, this.x, this.y, this.z, px, py, pz);
+				this.world.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, this.x, this.y, this.z, px, py, pz);
+			}
 		}
 		
 		for (Map.Entry<BlockPos, Vec3d> e : this.affectedBlockBlasts.entrySet()) {
@@ -133,20 +159,20 @@ public class BSExplosionBase extends Explosion {
 				nx = nx * vel;
 				ny = ny * vel;
 				nz = nz * vel;
-				this.world.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, (ax + this.x) / 2.0D,
-						(ay + this.y) / 2.0D, (az + this.z) / 2.0D, nx, ny, nz);
-				this.world.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, ax, ay, az, nx, ny, nz);
 				if (iblockstate.getMaterial() != Material.AIR) {
 					int blockstateid = Block.getStateId(iblockstate);
-					for (int i = 0; i < 16; i++) {
-						this.world.spawnParticle(EnumParticleTypes.BLOCK_CRACK,
+					for (int i = 0; i < 16; i++) { // vel = 1 ~ 0.01
+						this.world.spawnParticle(EnumParticleTypes.BLOCK_CRACK, // TODO: modify so that particle speed can be altered.
 								(float) blockpos.getX() + this.world.rand.nextFloat(),
 								(float) blockpos.getY() + this.world.rand.nextFloat(),
-								(float) blockpos.getZ() + this.world.rand.nextFloat(), dir.x, dir.y, dir.z, blockstateid);
+								(float) blockpos.getZ() + this.world.rand.nextFloat(), dir.x*10, dir.y*10, dir.z*10, blockstateid);
 					}
+					this.world.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, (ax + this.x) / 2.0D,
+							(ay + this.y) / 2.0D, (az + this.z) / 2.0D, nx, ny, nz);
+					this.world.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, ax, ay, az, nx, ny, nz);
 				}
 			}
-
+			
 			if (iblockstate.getMaterial() != Material.AIR) {
 				if (block.canDropFromExplosion(this)) {
 					block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos),
@@ -156,7 +182,32 @@ public class BSExplosionBase extends Explosion {
 			}
 		}
 		
-		
+		if (spawnParticles) {
+			for (BlockPos pos : this.wiggledBlocks) {
+				IBlockState iblockstate = this.world.getBlockState(pos);
+				if (iblockstate.isOpaqueCube()) {
+					if (!this.world.getBlockState(pos.offset(EnumFacing.DOWN)).isOpaqueCube()) {
+						int blockstateid = Block.getStateId(iblockstate);
+						this.world.spawnParticle(EnumParticleTypes.BLOCK_CRACK,
+								(float) pos.getX() + this.world.rand.nextFloat(),
+								(float) pos.getY(),
+								(float) pos.getZ() + this.world.rand.nextFloat(), 0, 0, 0, blockstateid);
+					}
+				}
+			}
+			for (BlockPos pos : this.hitBlocks) {
+				if (!this.world.getBlockState(pos).isOpaqueCube()) {
+					this.world.spawnParticle(EnumParticleTypes.SMOKE_NORMAL,
+							pos.getX() + this.world.rand.nextFloat(),
+							pos.getY() + this.world.rand.nextFloat(),
+							pos.getZ() + this.world.rand.nextFloat(), 0, 0, 0);
+					this.world.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL,
+							pos.getX() + this.world.rand.nextFloat(),
+							pos.getY() + this.world.rand.nextFloat(),
+							pos.getZ() + this.world.rand.nextFloat(), 0, 0, 0);
+				}
+			}
+		}
 	}
 	
 	@Override
@@ -198,6 +249,10 @@ public class BSExplosionBase extends Explosion {
 	public Map<BlockPos, Vec3d> getAffectedBlockBlasts() {
 		return this.affectedBlockBlasts;
 	}
+	
+	public Set<BlockPos> getWiggledBlockPos() { return this.wiggledBlocks; }
+	public Set<BlockPos> getHitParticleBlockPos() { return this.hitBlocks; }
+	
 	
 	public static class PressureRay {
 //		private static final int CHILD_SHIFT = 1;
@@ -271,7 +326,7 @@ public class BSExplosionBase extends Explosion {
 		public static final Set<PressureRay> RAYS = Collections.synchronizedSet(new HashSet<>());
 		
 		public static Set<PressureRay> seedRays(Vec3d origin, float intencity, World world) {
-			float division = 1.0f * 20f; // 強度の係数 バニラと大体の破壊力を揃える 12 ~ 
+			float division = 1.0f * 26f; // 強度の係数 バニラと大体の破壊力を揃える 20 ~ 
 			return Stream.of(ICOSAHEDRON).parallel()
 					.map(vs -> new PressureRay(intencity, division, origin, vs, world))
 					.collect(Collectors.toSet());
