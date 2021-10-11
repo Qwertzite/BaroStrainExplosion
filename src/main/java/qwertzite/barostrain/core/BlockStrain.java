@@ -105,7 +105,7 @@ public class BlockStrain {
 	private long getCompressiveStress() { return this.blastResistance; }
 	private long getTensileStress() { return this.hardness / 2; } // 想定の1/2
 	private long getShearingStress() { return this.hardness / 2; }
-
+	
 	/** 
 	 * その面が (相手に) 及ぼしている力を加算する
 	 * @param direction
@@ -123,6 +123,7 @@ public class BlockStrain {
 	
 	/** multiplied by BASE */
 	public long getBlastResistance() { return this.blastResistance; }
+	public boolean isBlastResistable() { return this.blastResistance != 0 || this.hardness != 0; }
 	
 	@Override
 	public String toString() {

@@ -4,6 +4,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,6 +44,7 @@ public class BlockStrainSimulator {
 	// ==== result ====
 	/** Result and blasting direction. */
 	private Map<BlockPos, Vec3d> affectedBlocks = new HashMap<>();
+	private Object2DoubleMap<BlockPos> hitBlocks = new Object2DoubleOpenHashMap<>();
 	
 	// ==== cache ====
 	private Object2DoubleMap<BlockPos> resistanceMap = new Object2DoubleOpenHashMap<BlockPos>();
@@ -124,6 +126,10 @@ public class BlockStrainSimulator {
 		double force = ray.getHitPressure();
 		if (reversed) force *= -1;
 		this.axis.get(facing.getAxis()).applyForce(ray, pos, facing, force);
+		BlockPos off = pos.offset(facing);
+		synchronized (this) {
+			this.hitBlocks.put(off, this.hitBlocks.getDouble(off) + force);
+		}
 	}
 	
 	/**
@@ -187,7 +193,10 @@ public class BlockStrainSimulator {
 				.collect(Collectors.toSet());
 		this.axis.values().parallelStream().forEach(e -> e.checkBlocksDestroyed(newlyDestroyed));
 		this.affectedBlocks.putAll(newlyDestroyed.parallelStream().collect(Collectors.toMap(pos -> pos, pos -> Vec3d.ZERO)));
-		for (BlockPos pos: newlyDestroyed) this.resistanceMap.remove(pos); // ついでに不要なキャッシュを消去
+		for (BlockPos pos: newlyDestroyed) {
+			this.resistanceMap.remove(pos); // ついでに不要なキャッシュを消去
+		}
+//		this.hitBlocks.removeAll(newlyDestroyed);
 //		System.out.println("Newly destroyed: " + newlyDestroyed.size() + " affected blocks: " + this.affectedBlocks.size());
 		
 		// 塊ごとに集計，各方位毎に次のPressureRayを算出
@@ -202,7 +211,7 @@ public class BlockStrainSimulator {
 	}
 	
 	public synchronized double getBlockResistanceAt(BlockPos pos) {
-		if (this.affectedBlocks.containsKey(pos)) return 0.0d;
+		if (this.affectedBlocks.containsKey(pos)) return 0.0d; // 破壊判定されている場合
 		if (!this.resistanceMap.containsKey(pos)) {
 			IBlockState iblockstate = this.world.getBlockState(pos);
 			double resistance = this.exploder != null ?
@@ -235,5 +244,25 @@ public class BlockStrainSimulator {
 					double norm = force.lengthVector();
 					return force.scale(sound / (norm + (1.0d+resistance)*sound));
 				}));
+	}
+	
+	/**
+	 * 下にパーティクルを出すブロック
+	 * @return
+	 */
+	public Set<BlockPos> getWiggledBlocks() {
+		return this.axis.values().parallelStream().flatMap(ax -> ax.getWiggledBlocks().parallelStream())
+				.filter(pos -> {
+					BlockPos off = pos.offset(EnumFacing.DOWN);
+					return !this.world.getBlockState(off).isOpaqueCube() ||
+							this.affectedBlocks.containsKey(off);
+				}).collect(Collectors.toSet());
+	}
+	
+	public Set<BlockPos> getHitBlocks(Random rand) {
+		return this.hitBlocks.entrySet().parallelStream().filter(e -> {
+			double val = e.getValue();
+			return val >= 1.0 || val >= rand.nextDouble();
+		}).map(e -> e.getKey()).collect(Collectors.toSet());
 	}
 }

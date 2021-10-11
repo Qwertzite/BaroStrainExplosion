@@ -8,7 +8,6 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
-import qwertzite.barostrain.mod.PacketBaroStrain;
 import qwertzite.barostrain.network.AbstractPacket;
 
 public class BsExplosions {

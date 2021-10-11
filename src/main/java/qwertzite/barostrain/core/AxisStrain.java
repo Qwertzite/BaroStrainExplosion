@@ -322,6 +322,10 @@ public class AxisStrain {
 		this.remainingForce.clear();
 	}
 	
+	public Set<BlockPos> getWiggledBlocks() {
+		return this.strainmap.keySet();
+	}
+	
 	// BFSを行い空き容量のある所に流す
 	// 破壊されたと判定されるブロックを集計する
 	
