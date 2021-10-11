@@ -102,7 +102,7 @@ public class BSExplosionBase extends Explosion {
 		
 		this.affectedBlockBlasts.putAll(blockStrain.getBlockBlastSpeed());
 		this.wiggledBlocks.addAll(blockStrain.getWiggledBlocks());
-		this.hitBlocks.addAll(blockStrain.getHitBlocks());
+		this.hitBlocks.addAll(blockStrain.getHitBlocks(this.world.rand));
 	}
 
 	/**

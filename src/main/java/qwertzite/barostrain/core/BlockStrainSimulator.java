@@ -4,6 +4,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,7 +44,7 @@ public class BlockStrainSimulator {
 	// ==== result ====
 	/** Result and blasting direction. */
 	private Map<BlockPos, Vec3d> affectedBlocks = new HashMap<>();
-	private Set<BlockPos> hitBlocks = new HashSet<>();
+	private Object2DoubleMap<BlockPos> hitBlocks = new Object2DoubleOpenHashMap<>();
 	
 	// ==== cache ====
 	private Object2DoubleMap<BlockPos> resistanceMap = new Object2DoubleOpenHashMap<BlockPos>();
@@ -125,7 +126,10 @@ public class BlockStrainSimulator {
 		double force = ray.getHitPressure();
 		if (reversed) force *= -1;
 		this.axis.get(facing.getAxis()).applyForce(ray, pos, facing, force);
-		this.hitBlocks.add(pos.offset(facing));
+		BlockPos off = pos.offset(facing);
+		synchronized (this) {
+			this.hitBlocks.put(off, this.hitBlocks.getDouble(off) + force);
+		}
 	}
 	
 	/**
@@ -255,7 +259,10 @@ public class BlockStrainSimulator {
 				}).collect(Collectors.toSet());
 	}
 	
-	public Set<BlockPos> getHitBlocks() {
-		return this.hitBlocks;
+	public Set<BlockPos> getHitBlocks(Random rand) {
+		return this.hitBlocks.entrySet().parallelStream().filter(e -> {
+			double val = e.getValue();
+			return val >= 1.0 || val >= rand.nextDouble();
+		}).map(e -> e.getKey()).collect(Collectors.toSet());
 	}
 }
