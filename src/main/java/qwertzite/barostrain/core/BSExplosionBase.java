@@ -17,6 +17,8 @@ import com.google.common.collect.Maps;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityTNTPrimed;
@@ -33,6 +35,7 @@ import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import qwertzite.barostrain.core.common.ParticleBlockFragment;
 import qwertzite.barostrain.util.BsMath;
 import qwertzite.barostrain.util.BsModLog;
 
@@ -143,6 +146,7 @@ public class BSExplosionBase extends Explosion {
 			Block block = iblockstate.getBlock();
 			Vec3d dir = e.getValue();
 			if (spawnParticles) {
+				ParticleManager effectRenderer = Minecraft.getMinecraft().effectRenderer;
 			// 音速に近づいていく，resistanceに応じて変化する
 				double ax = (double) ((float) blockpos.getX() + this.world.rand.nextFloat());
 				double ay = (double) ((float) blockpos.getY() + this.world.rand.nextFloat());
@@ -160,12 +164,20 @@ public class BSExplosionBase extends Explosion {
 				ny = ny * vel;
 				nz = nz * vel;
 				if (iblockstate.getMaterial() != Material.AIR) {
-					int blockstateid = Block.getStateId(iblockstate);
+					System.out.println(dir);
+//					int blockstateid = Block.getStateId(iblockstate);
 					for (int i = 0; i < 16; i++) { // vel = 1 ~ 0.01
-						this.world.spawnParticle(EnumParticleTypes.BLOCK_CRACK, // TODO: modify so that particle speed can be altered.
-								(float) blockpos.getX() + this.world.rand.nextFloat(),
-								(float) blockpos.getY() + this.world.rand.nextFloat(),
-								(float) blockpos.getZ() + this.world.rand.nextFloat(), dir.x*10, dir.y*10, dir.z*10, blockstateid);
+//						this.world.spawnParticle(EnumParticleTypes.BLOCK_CRACK, // TODO: modify so that particle speed can be altered.
+//								(float) blockpos.getX() + this.world.rand.nextFloat(),
+//								(float) blockpos.getY() + this.world.rand.nextFloat(),
+//								(float) blockpos.getZ() + this.world.rand.nextFloat(), dir.x*10, dir.y*10, dir.z*10, blockstateid);
+						effectRenderer.addEffect(
+								new ParticleBlockFragment(
+										this.world, 
+										(float) blockpos.getX() + this.world.rand.nextFloat(),
+										(float) blockpos.getY() + this.world.rand.nextFloat(),
+										(float) blockpos.getZ() + this.world.rand.nextFloat(),
+										dir.x/2, dir.y/2, dir.z/2, iblockstate)); // ~ 10
 					}
 					this.world.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, (ax + this.x) / 2.0D,
 							(ay + this.y) / 2.0D, (az + this.z) / 2.0D, nx, ny, nz);

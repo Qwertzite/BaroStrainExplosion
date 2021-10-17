@@ -1,5 +1,7 @@
 package qwertzite.barostrain.util;
 
+import java.util.Random;
+
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
@@ -101,5 +103,14 @@ public class BsMath {
 		} else {
 			return num > max ? max : num;
 		}
+	}
+	
+	public static int round(double x, Random rand) {
+		return round(x, rand.nextDouble());
+	}
+	
+	public static int round(double x, double rand) {
+		int floor = MathHelper.floor(x);
+		return floor + (rand <= x - floor ? 1 : 0);
 	}
 }
