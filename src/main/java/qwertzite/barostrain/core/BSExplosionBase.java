@@ -164,7 +164,6 @@ public class BSExplosionBase extends Explosion {
 				ny = ny * vel;
 				nz = nz * vel;
 				if (iblockstate.getMaterial() != Material.AIR) {
-					System.out.println(dir);
 //					int blockstateid = Block.getStateId(iblockstate);
 					for (int i = 0; i < 16; i++) { // vel = 1 ~ 0.01
 //						this.world.spawnParticle(EnumParticleTypes.BLOCK_CRACK, // TODO: modify so that particle speed can be altered.
