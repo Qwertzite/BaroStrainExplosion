@@ -22,7 +22,6 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import qwertzite.barostrain.core.BSExplosionBase.PressureRay;
 
 public class BlockStrainSimulator {
 	private final World world;
@@ -63,12 +62,11 @@ public class BlockStrainSimulator {
 	/**
 	 * ray の衝突に関する処理を行う．
 	 * @param ray
+	 * @return 末端 (衝突箇所 or トレースした最後の場所)
 	 */
-	public void rayTraceBlocks(PressureRay ray) {
+	public Vec3d rayTraceBlocks(PressureRay ray) {
 		Vec3d from = ray.getAbsFrom();
 		Vec3d to = ray.getAbsTo();
-		
-		// TODO: damage entity, player knock back map
 		
 		double dx = to.x - from.x;
 		double dy = to.y - from.y;
@@ -84,12 +82,12 @@ public class BlockStrainSimulator {
 		if (trace != null) {
 			ray.setTraceResult(trace);
 			this.addCollidingRay(pos, ray, true);
-			return; // 衝突した場合
+			return trace.hitVec; // 衝突した場合
 		}
 		
 		for (double len = 0.3d; len < dn-0.1d; len += 0.3d) {
 			pressure = ray.pressureAt(len);
-			if (pressure <= 0.0d) return; // 消滅した場合
+			if (pressure <= 0.0d) return from.addVector(nx*len, ny*len, nz*len); // 消滅した場合
 			int ix = MathHelper.floor(from.x + nx * len);
 			int iy = MathHelper.floor(from.y + ny * len);
 			int iz = MathHelper.floor(from.z + nz * len);
@@ -99,25 +97,25 @@ public class BlockStrainSimulator {
 			if (trace != null) {
 				ray.setTraceResult(trace);
 				this.addCollidingRay(pos, ray, false);
-				return; // 衝突した場合
+				return trace.hitVec; // 衝突した場合
 			}
 		}
 		
 		pressure = ray.pressureAt(dn);
-		if (pressure <= 0.0d) return; // 消失した場合
+		if (pressure <= 0.0d) return to; // 消失した場合
 		BlockPos lpos = new BlockPos(to);
 		if (lpos.equals(pos)) {
 			this.addPendingRay(ray);
-			return; // 衝突しなかった場合
+			return to; // 衝突しなかった場合
 		}
 		trace = this.pollBlockAt(lpos, from, to, ray);
 		if (trace == null) {
 			this.addPendingRay(ray);
-			return; // 衝突しなかった場合
+			return to; // 衝突しなかった場合
 		} else {
 			ray.setTraceResult(trace);
 			this.addCollidingRay(lpos, ray, false);
-			return; // 衝突した場合，
+			return trace.hitVec; // 衝突した場合，
 		}
 	}
 
@@ -179,6 +177,8 @@ public class BlockStrainSimulator {
 	private synchronized void addBlastVec(BlockPos pos, Vec3d vec) { // keyの追加は破壊処理の時のみなので気にする必要はない
 		this.affectedBlocks.put(pos, this.affectedBlocks.get(pos).add(vec));
 	}
+	
+
 	
 	// ==== STEP 2 ====
 	

@@ -16,9 +16,8 @@ import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
-import qwertzite.barostrain.core.BSExplosionBase;
-import qwertzite.barostrain.core.BSExplosionBase.PressureRay;
 import qwertzite.barostrain.core.BsExplosions;
+import qwertzite.barostrain.core.PressureRay;
 import qwertzite.barostrain.mod.command.CommandBSTest;
 import qwertzite.barostrain.mod.command.CommandBsMulti;
 import qwertzite.barostrain.mod.command.CommandExplosion;
@@ -77,8 +76,8 @@ public class BaroStrainExplosionCore {
 		Tessellator tessellator = Tessellator.getInstance();
 		BufferBuilder bufferbuilder = tessellator.getBuffer();
 		bufferbuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
-		synchronized (BSExplosionBase.PressureRay.RAYS) {
-			for (PressureRay ray : BSExplosionBase.PressureRay.RAYS) {
+		synchronized (PressureRay.RAYS) {
+			for (PressureRay ray : PressureRay.RAYS) {
 				Vec3d from = ray.getAbsFrom();
 				Vec3d to = ray.hit == null ? ray.getAbsTo() : ray.hit.hitVec;
 				bufferbuilder.pos(from.x, from.y, from.z).color(1.0f, 0.0f, 0.0f, 0.333f).endVertex();
@@ -88,8 +87,8 @@ public class BaroStrainExplosionCore {
 		tessellator.draw();
 		GlStateManager.color(0.0f, 0.5f, 0.0f, 1.0f);
 		bufferbuilder.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION);
-		synchronized (BSExplosionBase.PressureRay.RAYS) {
-			for (PressureRay ray : BSExplosionBase.PressureRay.RAYS) {
+		synchronized (PressureRay.RAYS) {
+			for (PressureRay ray : PressureRay.RAYS) {
 				Vec3d[] seeds = ray.seed;
 				Vec3d s0 = seeds[0].add(ray.origin);
 				Vec3d s1 = seeds[1].add(ray.origin);

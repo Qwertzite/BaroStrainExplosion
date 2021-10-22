@@ -10,8 +10,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.CommandBlockBaseLogic;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
-import qwertzite.barostrain.core.BSExplosionBase;
 import qwertzite.barostrain.core.BsExplosions;
+import qwertzite.barostrain.core.PressureRay;
 
 public class CommandExplosion extends CommandBase {
 
@@ -36,7 +36,7 @@ public class CommandExplosion extends CommandBase {
 
 	@Override
 	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-		BSExplosionBase.PressureRay.RAYS.clear();
+		PressureRay.RAYS.clear();
 		switch (args[0].toLowerCase()) {
 		case "v":
 		case "vanilla":
