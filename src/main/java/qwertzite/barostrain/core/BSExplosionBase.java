@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -24,6 +25,7 @@ import net.minecraft.init.SoundEvents;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -42,6 +44,7 @@ public class BSExplosionBase extends Explosion {
 	private final double z;
 	private final Entity exploder;
 	// ==== cache ====
+	private final Set<Entity> entityCache = new HashSet<>();
 	
 	// ==== results ====
 	private final Map<BlockPos, Vec3d> affectedBlockBlasts;
@@ -88,6 +91,8 @@ public class BSExplosionBase extends Explosion {
 	 */
 	@Override
 	public void doExplosionA() {
+		this.initEntityMap();
+		
 		BlockStrainSimulator blockStrain = new BlockStrainSimulator(this.world, this.exploder, this);
 		
 		Set<PressureRay> raySet; // 最初のrayを生成する
@@ -106,13 +111,25 @@ public class BSExplosionBase extends Explosion {
 		this.hitBlocks.addAll(blockStrain.getHitBlocks(this.world.rand));
 	}
 	
-	// TODO: 影響されうる最大範囲のエンティティを取得する
+	// 影響されうる最大範囲のエンティティを取得する
 	private void initEntityMap() {
-		
-		// TODO:
+		final double P = MathHelper.sqrt(this.intencity);
+		final double Q = 0.5d*P + 0.5d;
+		final double x1 = 2*Q;
+		final double x2 = (2 + MathHelper.SQRT_2) * Q;
+		final double y1 = P*Math.exp(-2)*4*Q*Q;
+		final double y2 = P*Math.exp(-2-MathHelper.SQRT_2) * (6+4*MathHelper.SQRT_2) * Q * Q;
+		final double maxDist = x1 - y1 * (x2 - x1) / (y2 - y1);
+		if (maxDist <= 0.0d) return;
+		AxisAlignedBB aabb = new AxisAlignedBB(this.x - maxDist, this.y - maxDist, this.z - maxDist, this.x + maxDist, this.y + maxDist, this.z + maxDist);
+		this.entityCache.addAll(this.world.getEntitiesWithinAABBExcludingEntity(null, aabb));
 	}
 	
+	/** 並列呼び出し */
 	private void damageEntity(PressureRay ray, Vec3d to) {
+		this.entityCache.stream().forEach(e -> {
+			e.getEntityBoundingBox().calculateIntercept(ray.getAbsFrom(), to);
+		});
 		// TODO:
 	}
 	
