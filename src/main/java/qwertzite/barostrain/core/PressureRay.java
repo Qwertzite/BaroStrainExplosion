@@ -52,6 +52,7 @@ public class PressureRay {
 	
 	private World world;
 	private double intencity;
+	private boolean initial;
 	
 	private double division; // multiply this to obtain actual force. これ倍する
 	private double radius;
@@ -87,8 +88,13 @@ public class PressureRay {
 	public static Set<PressureRay> seedRays(Vec3d origin, float intencity, World world) {
 		float division = 1.0f * 26f; // 強度の係数 バニラと大体の破壊力を揃える 20 ~ 
 		return Stream.of(ICOSAHEDRON).parallel()
-				.map(vs -> new PressureRay(intencity, division, origin, vs, world))
+				.map(vs -> new PressureRay(intencity, division, origin, vs, world).setAsInitial())
 				.collect(Collectors.toSet());
+	}
+	
+	public PressureRay setAsInitial() { 
+		this.initial = true;
+		return this;
 	}
 	
 	// ==== step 1: Ray trace　レイトレース ====
@@ -180,6 +186,12 @@ public class PressureRay {
 		return this.pressureAt(this.distFromPrev(absPos));
 	}
 	
+	/**
+	 * computers pressure at "distFromFrom" away from "from".
+	 * From からdistFromFrom　離れた位置における圧力を計算する
+	 * @param distFromFrom
+	 * @return
+	 */
 	public double pressureAt(double distFromFrom) {
 		final double P = MathHelper.sqrt(intencity);
 		final double Q = 0.5d*P + 0.5d;
@@ -211,5 +223,9 @@ public class PressureRay {
 	
 	public Vec3d getDirection() {
 		return BsMath.subtract(this.posNext, this.posPrev).normalize();
+	}
+	
+	public boolean isInitial() {
+		return this.initial;
 	}
 }

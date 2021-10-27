@@ -5,23 +5,26 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.ParticleManager;
+import net.minecraft.enchantment.EnchantmentProtection;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityTNTPrimed;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.SoundEvents;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.SoundCategory;
@@ -34,6 +37,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import qwertzite.barostrain.core.common.ParticleBlockFragment;
+import qwertzite.barostrain.util.AabbHelper;
 
 public class BSExplosionBase extends Explosion {
 	public static final double ERR = 0.00001d;
@@ -43,6 +47,9 @@ public class BSExplosionBase extends Explosion {
 	private final double y;
 	private final double z;
 	private final Entity exploder;
+	private final Vec3d position;
+	private final float intencity;
+	
 	// ==== cache ====
 	private final Set<Entity> entityCache = new HashSet<>();
 	
@@ -51,15 +58,8 @@ public class BSExplosionBase extends Explosion {
 	private final Set<BlockPos> wiggledBlocks;
 	private final Set<BlockPos> hitBlocks;
 	private final Map<EntityPlayer, Vec3d> playerKnockbackMap;
-	private final Vec3d position;
-	
-	private final float intencity;
-
-//	@SideOnly(Side.CLIENT)
-//	public BSExplosionBase(World worldIn, Entity entityIn, double x, double y, double z, float size,
-//			List<BlockPos> affectedPositions) {
-//		this(worldIn, entityIn, x, y, z, size, affectedPositions);
-//	}
+	private final Map<Entity, Vec3d> entityBlast;
+	private final Object2DoubleMap<Entity> entityDamage;
 
 	@SideOnly(Side.CLIENT)
 	public BSExplosionBase(World worldIn, Entity entityIn, double x, double y, double z, float size,
@@ -77,6 +77,9 @@ public class BSExplosionBase extends Explosion {
 		this.wiggledBlocks = new HashSet<>();
 		this.hitBlocks = new HashSet<>();
 		this.playerKnockbackMap = Maps.<EntityPlayer, Vec3d>newHashMap();
+		this.entityBlast = new HashMap<>();
+		this.entityDamage = new Object2DoubleOpenHashMap<>();
+		
 		this.world = worldIn;
 		this.exploder = entityIn;
 		this.x = x;
@@ -109,6 +112,42 @@ public class BSExplosionBase extends Explosion {
 		this.affectedBlockBlasts.putAll(blockStrain.getBlockBlastSpeed());
 		this.wiggledBlocks.addAll(blockStrain.getWiggledBlocks());
 		this.hitBlocks.addAll(blockStrain.getHitBlocks(this.world.rand));
+		
+		// process entities
+		net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(this.world, this, Lists.newArrayList(this.entityBlast.keySet()), this.intencity*2);
+		
+		for (Entity entity : this.entityBlast.keySet()) {
+			if (entity.isImmuneToExplosions()) continue;
+			double damage = (this.entityDamage.getDouble(entity) - 0.5d)  * 4.0d;
+			if (damage <= 0.1d) continue;
+			
+			entity.attackEntityFrom(DamageSource.causeExplosionDamage(this), (float) damage);
+			
+			double reduction = 1.0d;
+			if (entity instanceof EntityLivingBase) {
+				reduction = EnchantmentProtection.getBlastDamageReduction((EntityLivingBase) entity, 1.0d);
+			}
+			
+			Vec3d blast = this.entityBlast.get(entity);
+			double vel = blast.lengthVector();
+			if (vel == 0.0d) continue;
+			blast = blast.addVector(0, entity.getEyeHeight(), 0);
+			double vel2 = blast.lengthVector();
+			if (vel2 == 0.0d) continue;
+			blast = blast.scale(vel / vel2 * 0.1d);
+			
+			entity.motionX += blast.x * reduction;
+			entity.motionY += blast.y * reduction;
+			entity.motionZ += blast.z * reduction;
+			if (entity instanceof EntityPlayer) {
+				EntityPlayer entityplayer = (EntityPlayer) entity;
+				if (!entityplayer.isSpectator()
+						&& (!entityplayer.isCreative() || !entityplayer.capabilities.isFlying)) {
+					this.playerKnockbackMap.put(entityplayer, blast);
+				}
+			}
+
+		}
 	}
 	
 	// 影響されうる最大範囲のエンティティを取得する
@@ -128,18 +167,27 @@ public class BSExplosionBase extends Explosion {
 	/** 並列呼び出し */
 	private void damageEntity(PressureRay ray, Vec3d to) {
 		this.entityCache.stream().forEach(e -> {
-			e.getEntityBoundingBox().calculateIntercept(ray.getAbsFrom(), to);
+			AxisAlignedBB aabb = e.getEntityBoundingBox();
+			if (AabbHelper.isInside(aabb, ray.getAbsFrom())) {
+				if (ray.isInitial()) {
+					this.addEntityBlastVec(e, ray.pressureAt(0), ray.getDirection());
+				}
+			} else {
+				Vec3d hit = AabbHelper.computeIntercept(aabb, ray.getAbsFrom(), to);
+				if (hit != null) {
+					this.addEntityBlastVec(e, ray.pressureAt(hit), ray.getDirection());
+				}
+			}
+
 		});
-		// TODO:
 	}
 	
-	private void addEntityBlastVec(Entity entity, Vec3d vec) {
-		double len = vec.lengthVector();
+	private void addEntityBlastVec(Entity entity, double intencity, Vec3d vec) {
 		synchronized (this) {
-			// TODO: add vec to blast direction
+			this.entityBlast.put(entity, this.entityBlast.getOrDefault(entity, Vec3d.ZERO).add(vec.scale(intencity)));
 		}
 		synchronized (this) {
-			// TODO: increase damage for given entity.
+			this.entityDamage.put(entity, this.entityDamage.getDouble(entity) + intencity);
 		}
 	}
 
