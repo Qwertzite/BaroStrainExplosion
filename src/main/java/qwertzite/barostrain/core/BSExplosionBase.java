@@ -262,7 +262,7 @@ public class BSExplosionBase extends Explosion {
 				}
 			}
 			
-			if (iblockstate.getMaterial() != Material.AIR) { 
+			if (iblockstate.getMaterial() != Material.AIR) {
 				if (block.canDropFromExplosion(this)) {
 					if (Math.random() > 0.7) {
 //						EntityFallingBlock efb = new EntityFallingBlock(this.world,
