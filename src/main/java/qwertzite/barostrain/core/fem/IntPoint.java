@@ -25,15 +25,15 @@ public enum IntPoint {
 		this.weight = weight;
 	}
 
-	public double getX() {
+	public double getXi() {
 		return x;
 	}
 
-	public double getY() {
+	public double getEta() {
 		return y;
 	}
 
-	public double getZ() {
+	public double getZeta() {
 		return z;
 	}
 

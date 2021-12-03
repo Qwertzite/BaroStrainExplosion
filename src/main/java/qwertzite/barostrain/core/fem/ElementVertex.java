@@ -53,4 +53,28 @@ public enum ElementVertex {
 		return c;
 	}
 	
+	public double shapeFunc(IntPoint pos) {
+		switch (this.getRank()) {
+		case 0: return 1.0d / 8.0d * (1 + this.getA() * pos.getXi()) * (1 + this.getB() * pos.getEta()) * (1 + this.getC() * pos.getZeta());
+		default:
+			assert(false);
+			return 0.0d;
+		}
+	}
+	
+	public double shapeFuncPartial(int axis, IntPoint pos) {
+		switch (this.getRank()) {
+		case 0: {
+			double ret = 1.0d / 8.0d;
+			ret *= (axis == 0) ? this.getA() : (1 + this.getA()*pos.getXi());
+			ret *= (axis == 1) ? this.getB() : (1 + this.getB()*pos.getEta());
+			ret *= (axis == 2) ? this.getC() : (1 + this.getC()*pos.getZeta());
+			return ret;
+		}
+		default:
+			assert(false);
+			return 0.0d;
+		}
+	}
+	
 }
