@@ -264,8 +264,14 @@ public class BSExplosionBase extends Explosion {
 			
 			if (iblockstate.getMaterial() != Material.AIR) {
 				if (block.canDropFromExplosion(this)) {
-					block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos),
-							1.0F / this.intencity, 0);
+					if (Math.random() > 0.7) {
+//						EntityFallingBlock efb = new EntityFallingBlock(this.world,
+//								blockpos.getX() + 0.5, blockpos.getY() + 0.5, blockpos.getZ() + 0.5, iblockstate);
+//						this.world.spawnEntity(efb);
+					} else {
+						block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos),
+								1.0F / this.intencity, 0);
+					}
 				}
 				block.onBlockExploded(this.world, blockpos, this);
 			}
