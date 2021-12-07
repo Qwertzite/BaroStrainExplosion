@@ -15,7 +15,7 @@ public class VertexPos {
 		this.shift = shift;
 	}
 	
-	public VertexPos(BlockPos pos, ElementVertex ev) {
+	public VertexPos(BlockPos pos, ElemVertex ev) {
 		int dx1 = ev.getA() / 2;
 		int sx1 = ev.getA() % 2;
 		int dx2 = ev.getB() / 2;
@@ -27,10 +27,10 @@ public class VertexPos {
 	}
 	
 	public static VertexPos[] fromElementPos(BlockPos element) {
-		final int NV = ElementVertex.values().length;
+		final int NV = ElemVertex.values().length;
 		VertexPos[] pos = new VertexPos[NV];
 		for (int i = 0; i < NV; i++) {
-			pos[i] = new VertexPos(element, ElementVertex.values()[i]);
+			pos[i] = new VertexPos(element, ElemVertex.values()[i]);
 		}
 		return pos;
 	}

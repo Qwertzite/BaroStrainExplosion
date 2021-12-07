@@ -1,6 +1,6 @@
 package qwertzite.barostrain.core.fem;
 
-public enum ElementVertex {
+public enum ElemVertex {
 	// class 0
 	VNNN(0, 0, -1, -1, -1),
 	VPNN(1, 0,  1, -1, -1),
@@ -30,7 +30,7 @@ public enum ElementVertex {
 	private final int a;
 	private final int b;
 	private final int c;
-	private ElementVertex(int index, int rank, int a, int b, int c) {
+	private ElemVertex(int index, int rank, int a, int b, int c) {
 		this.index = index;
 		this.rank = rank;
 		this.a = a;
