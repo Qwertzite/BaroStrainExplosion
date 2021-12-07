@@ -18,7 +18,7 @@ public enum IntPoint {
 	private final double weight;
 	
 	private IntPoint(double x, double y, double z, double weight) {
-		double D = - 1.0d / Math.sqrt(3.0d);
+		double D = 1.0d / Math.sqrt(3.0d);
 		this.x = x*D;
 		this.y = y*D;
 		this.z = z*D;

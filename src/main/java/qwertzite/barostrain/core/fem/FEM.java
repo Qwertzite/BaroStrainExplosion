@@ -2,6 +2,7 @@ package qwertzite.barostrain.core.fem;
 
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import scala.actors.threadpool.Arrays;
 
 public class FEM {
 	
@@ -11,16 +12,13 @@ public class FEM {
 		this.ibpp = ibpp;
 	}
 	
-	public void computeNodeForceForDisplacement(FemIter iteration) {
+	public void computeVertexForce(FemIter iteration) {
 		
 		iteration.targetElements.parallelStream() // PARALLEL
 			.forEach(e -> {// 各要素について計算し節点外力を求める
-//				final double hardness = this.hardness(e); // 靭性
-//				final double resistance = this.resistance(e); // 塑性
-//				final double youngsModulus = hardness != 0 ? resistance / hardness : 0.0d;
-//				final double poissonCoeffs = hardness != 0 ? 0.5 * hardness / (hardness + 1) * 3 / (resistance / hardness + 2) : 0.0d;
-				final double mu = this.ibpp.getMuForElement(e); // youngsModulus / (2*(1 + poissonCoeffs)); // 
-				final double lambda = this.ibpp.getLambdaForElement(e); // youngsModulus*poissonCoeffs / ((1 + poissonCoeffs)*(1 - 2*poissonCoeffs));
+				
+				final double mu = this.ibpp.getMuForElement(e);
+				final double lambda = this.ibpp.getLambdaForElement(e);
 				final double sigmaYield = this.ibpp.getSigmaYield(e);
 				
 				final int NV = ElemVertex.values().length;
@@ -38,35 +36,34 @@ public class FEM {
 					for (ElemVertex p : ElemVertex.values()) { // 節点座標
 						for (int i = 0; i < 3; i++) {
 							for (int j = 0; j < 3; j++) {
-								epsilon[i][j] = (
+								epsilon[i][j] += (
 										p.shapeFuncPartial(i, xi) * u(u[p.getIndex()], j) +
 										p.shapeFuncPartial(j, xi) * u(u[p.getIndex()], i)
-										) / 2;
+										) / 2.0d;
 							}
 						}
 					}
+					
 					// 等軸圧縮成分
 					double epsm = 0.0d;
 					for (int i = 0; i < 3; i++) epsm += epsilon[i][i];
 					epsm /= 3.0d;
-					
 					for (int i = 0; i < 3; i++) {
 						epsilon[i][i] -= epsm; // ここで偏差成分のみになる e
 					}
 					
 					double[][] sigmaTrial = new double[3][3];
 					double sigmaNormal = 0.0d;
-					
 					for (int i = 0; i < 3; i++) {
 						for (int j = 0; j < 3; j++) {
 							sigmaTrial[i][j] = 2 * mu * epsilon[i][j];
 							sigmaNormal += sigmaTrial[i][j] * sigmaTrial[i][j];
 						}
 					}
-					
 					sigmaNormal = MathHelper.sqrt(sigmaNormal);
-					double ftrial = sigmaNormal - MathHelper.sqrt(2 / 3) * sigmaYield;
+					double ftrial = sigmaNormal - MathHelper.sqrt(2.0d / 3.0d) * sigmaYield;
 					double slide = ftrial / (2*mu);
+					
 					double[][] sigma = new double[3][3];
 					
 					if (slide > 0.0d) { // 塑性変形している場合
@@ -81,14 +78,14 @@ public class FEM {
 							for (int j = 0; j < 3; j++) {
 								sigma[i][j] = sigmaTrial[i][j] - 2*mu*slide*normal[i][j];
 							}
-							sigma[i][i] += (2.0d / 3.0d * mu + lambda) * epsm;
+							sigma[i][i] += (2.0d * mu + 3.0d * lambda) * epsm;
 						}
 					} else { // 塑性変形が起こらない場合
 						for (int i = 0; i < 3; i++) {
 							for (int j = 0; j < 3; j++) {
 								sigma[i][j] = sigmaTrial[i][j]; // 偏差成分
 							}
-							sigma[i][i] += (2.0d / 3.0d * mu + lambda) * epsm; // 等方成分
+							sigma[i][i] += (2.0d * mu + 3.0d * lambda) * epsm; // 等方成分
 						}
 					}
 					
