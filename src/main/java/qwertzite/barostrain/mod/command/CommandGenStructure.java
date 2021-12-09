@@ -38,8 +38,6 @@ public class CommandGenStructure extends CommandBase {
 
 	@Override
 	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-		// TODO Auto-generated method stub
-		
 		/*
 		 * name
 		 * pos x y z
