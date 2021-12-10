@@ -3,7 +3,7 @@ package qwertzite.barostrain.core.common;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.particle.ParticleDigging;
 import net.minecraft.world.World;
-import qwertzite.barostrain.util.BsMath;
+import qwertzite.barostrain.util.BsxMath;
 
 public class ParticleBlockFragment extends ParticleDigging {
 	private final double RATE = Math.log(Math.pow(0.5, 1.0 / 4));
@@ -14,7 +14,7 @@ public class ParticleBlockFragment extends ParticleDigging {
 		this.motionX = (Math.random()*0.4 + xSpeedIn) * (0.9 + Math.random() * 0.2D);
 		this.motionY = (Math.random()*0.4 + ySpeedIn) * (0.9 + Math.random() * 0.2D);
 		this.motionZ = (Math.random()*0.4 + zSpeedIn) * (0.9 + Math.random() * 0.2D);
-		this.particleMaxAge = BsMath.round(Math.log(1 - Math.random()*0.99) / RATE, Math.random());
+		this.particleMaxAge = BsxMath.round(Math.log(1 - Math.random()*0.99) / RATE, Math.random());
 		
 		this.init();
 	}

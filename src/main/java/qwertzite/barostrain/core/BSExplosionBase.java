@@ -42,13 +42,13 @@ import qwertzite.barostrain.util.AabbHelper;
 public class BSExplosionBase extends Explosion {
 	public static final double ERR = 0.00001d;
 //	private final Random random;
-	private final World world;
-	private final double x;
-	private final double y;
-	private final double z;
-	private final Entity exploder;
-	private final Vec3d position;
-	private final float intencity;
+	protected final World world;
+	protected final double x;
+	protected final double y;
+	protected final double z;
+	protected final Entity exploder;
+	protected final Vec3d position;
+	protected final float intencity;
 	
 	// ==== cache ====
 	private final Set<Entity> entityCache = new HashSet<>();
@@ -151,7 +151,7 @@ public class BSExplosionBase extends Explosion {
 	}
 	
 	// 影響されうる最大範囲のエンティティを取得する
-	private void initEntityMap() {
+	private void initEntityMap() { // TODO: remove
 		final double P = MathHelper.sqrt(this.intencity);
 		final double Q = 0.5d*P + 0.5d;
 		final double x1 = 2*Q;
@@ -165,7 +165,7 @@ public class BSExplosionBase extends Explosion {
 	}
 	
 	/** 並列呼び出し */
-	private void damageEntity(PressureRay ray, Vec3d to) {
+	private void damageEntity(PressureRay ray, Vec3d to) { // TODO: remove
 		this.entityCache.stream().forEach(e -> {
 			AxisAlignedBB aabb = e.getEntityBoundingBox();
 			if (AabbHelper.isInside(aabb, ray.getAbsFrom())) {
@@ -182,7 +182,7 @@ public class BSExplosionBase extends Explosion {
 		});
 	}
 	
-	private void addEntityBlastVec(Entity entity, double intencity, Vec3d vec) {
+	private void addEntityBlastVec(Entity entity, double intencity, Vec3d vec) { // TODO: remove
 		synchronized (this) {
 			this.entityBlast.put(entity, this.entityBlast.getOrDefault(entity, Vec3d.ZERO).add(vec.scale(intencity)));
 		}

@@ -1,16 +1,28 @@
 package qwertzite.barostrain.core.fem;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import scala.actors.threadpool.Arrays;
 
 public class FEM {
 	
 	private IBlockPropertyProvider ibpp;
 	
+	private Object2DoubleMap<VertexPos> inbalanceTolerance = new Object2DoubleOpenHashMap<>();
+	
+	private Map<VertexPos, Vec3d> externalForce = new HashMap<>();
+	
 	public FEM(IBlockPropertyProvider ibpp) {
 		this.ibpp = ibpp;
 	}
+	
+	
 	
 	public void computeVertexForce(FemIter iteration) {
 		
@@ -109,6 +121,15 @@ public class FEM {
 		default:
 			assert(false);
 			return 0.0d;
+		}
+	}
+	
+	public void notifyBlockStatusChange(Set<BlockPos> destroyedBlocks) {
+		for (BlockPos blockpos : destroyedBlocks) {
+			VertexPos[] poss = VertexPos.fromElementPos(blockpos);
+			for (VertexPos vp : poss) {
+				this.inbalanceTolerance.remove(vp);
+			}
 		}
 	}
 	

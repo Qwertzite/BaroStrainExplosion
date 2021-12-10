@@ -6,7 +6,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 
-public class BsMath {
+public class BsxMath {
 	
 	public static Vec3i add(Vec3i vd, Vec3i vi) {
 		return new Vec3i(vd.getX() + vi.getX(), vd.getY() + vi.getY(), vd.getZ() + vi.getZ());

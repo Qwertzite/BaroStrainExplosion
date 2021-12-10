@@ -10,8 +10,8 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import qwertzite.barostrain.util.BsMath;
-import qwertzite.barostrain.util.BsModLog;
+import qwertzite.barostrain.util.BsxMath;
+import qwertzite.barostrain.util.BsxModLog;
 
 public class PressureRay {
 //	private static final int CHILD_SHIFT = 1;
@@ -79,7 +79,7 @@ public class PressureRay {
 		this.origin = origin;
 		this.posPrev = posPrev;
 		this.seed = seed;
-		this.posNext = BsMath.average(seed[0], seed[1], seed[2]);
+		this.posNext = BsxMath.average(seed[0], seed[1], seed[2]);
 		this.dist = dist;
 //		RAYS.add(this);
 	}
@@ -109,15 +109,15 @@ public class PressureRay {
 	// ==== step 3: 次のバッチに向けて ====
 	
 	public Stream<PressureRay> nextStep() {
-		double dist = BsMath.distance(this.posNext, this.posPrev);
+		double dist = BsxMath.distance(this.posNext, this.posPrev);
 		if (this.pressureAt(dist) <= 0.0d) {
 			return Stream.empty();
 		}
 		Vec3d prev = this.posNext;
 		double radius = this.radius * 2.0d;
-		Vec3d ns01 = BsMath.sumScale(seed[0], seed[1], radius);
-		Vec3d ns12 = BsMath.sumScale(seed[1], seed[2], radius);
-		Vec3d ns20 = BsMath.sumScale(seed[2], seed[0], radius);
+		Vec3d ns01 = BsxMath.sumScale(seed[0], seed[1], radius);
+		Vec3d ns12 = BsxMath.sumScale(seed[1], seed[2], radius);
+		Vec3d ns20 = BsxMath.sumScale(seed[2], seed[0], radius);
 		Vec3d ns00 = seed[0].scale(2.0d);
 		Vec3d ns11 = seed[1].scale(2.0d);
 		Vec3d ns22 = seed[2].scale(2.0d);
@@ -148,18 +148,18 @@ public class PressureRay {
 		switch (this.hit.sideHit.getAxis()) {
 		case X:
 			origin = this.origin.addVector(2*relHit.x, 0, 0);
-			seeds = BsMath.invert3X(this.seed);
+			seeds = BsxMath.invert3X(this.seed);
 			break;
 		case Y:
 			origin = this.origin.addVector(0, 2*relHit.y, 0);
-			seeds = BsMath.invert3Y(this.seed);
+			seeds = BsxMath.invert3Y(this.seed);
 			break;
 		case Z:
 			origin = this.origin.addVector(0, 0, 2*relHit.z);
-			seeds = BsMath.invert3Z(this.seed);
+			seeds = BsxMath.invert3Z(this.seed);
 			break;
 		default:
-		BsModLog.warn("Unknown hit side axis! {}", this.hit.sideHit.getAxis());
+		BsxModLog.warn("Unknown hit side axis! {}", this.hit.sideHit.getAxis());
 		assert(false);
 		origin = null;
 		seeds = null;
@@ -206,11 +206,11 @@ public class PressureRay {
 	}
 	
 	public Vec3d getAbsFrom() {
-		return BsMath.add(this.origin, this.posPrev);
+		return BsxMath.add(this.origin, this.posPrev);
 	}
 	
 	public Vec3d getAbsTo() {
-		return BsMath.add(this.origin, this.posNext);
+		return BsxMath.add(this.origin, this.posNext);
 	}
 //	
 //	public RayTraceResult getTraceResult() {
@@ -222,7 +222,7 @@ public class PressureRay {
 	}
 	
 	public Vec3d getDirection() {
-		return BsMath.subtract(this.posNext, this.posPrev).normalize();
+		return BsxMath.subtract(this.posNext, this.posPrev).normalize();
 	}
 	
 	public boolean isInitial() {
