@@ -1,11 +1,11 @@
 package qwertzite.barostrain.core.barostrain;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -16,6 +16,8 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import qwertzite.barostrain.core.PressureRay;
+import qwertzite.barostrain.core.common.BlockFace;
+import qwertzite.barostrain.core.fem.FEM;
 import qwertzite.barostrain.core.fem.IBlockPropertyProvider;
 
 public class BaroRaySimulator implements IBlockPropertyProvider {
@@ -23,12 +25,7 @@ public class BaroRaySimulator implements IBlockPropertyProvider {
 	private BaroStrainExplosion explosion;
 	private World world;
 
-	// ==== ray-trace 処理 ====
-	private Set<PressureRay> pendingRays = new HashSet<>(); // 今回は衝突しなかったray，分割処理を施して次の回に処理する
-//	private Object2DoubleMap<BlockFace, Double> 
-	
-	// ==== Block Face 別 ray trace ====
-	
+	FEM fem;
 	
 	private Map<BlockPos, Vec3d> affectedBlocks = new HashMap<>();
 //	private Set<BlockFace>
@@ -40,28 +37,47 @@ public class BaroRaySimulator implements IBlockPropertyProvider {
 	}
 	
 	public void evaluate() {
+		fem = new FEM(this);
+		
 		Set<PressureRay> raySet; // 最初のrayを生成する
 		raySet =PressureRay.seedRays(this.explosion.getPosition(), this.explosion.getIntencity(), this.world);
 		
 		while (!raySet.isEmpty()) {
-			raySet.parallelStream().forEach(ray -> {
-				RayTraceResult trace = this.internalCollision(ray);
-				RayTraceResult collision = this.rayTraceCollision(ray);
-//				damageEntity(ray, end); TODO: damage entity
-			});
-//			raySet = brs.destructionEval();
+			raySet = this.rayLoop(raySet);
+			
+			
 		}
 	}
 	
-	private RayTraceResult internalCollision(PressureRay ray) {
+	private Set<PressureRay> rayLoop(Set<PressureRay> raySet) {
+		Set<PressureRay> pending = Collections.synchronizedSet(new HashSet<>());
+		Map<BlockFace, Set<PressureRay>> hitRay = new HashMap<>();
+		
+		raySet.parallelStream().forEach(ray -> {
+			RayTraceResult trace = this.internalCollision(ray);
+			if (trace != null) {
+				if (trace.typeOfHit == RayTraceResult.Type.BLOCK) this.addCollidingRay(trace.getBlockPos(), ray, true, hitRay);
+			} else {
+				trace = this.externalCollision(ray);
+				if (trace.typeOfHit == RayTraceResult.Type.BLOCK) this.addCollidingRay(trace.getBlockPos(), ray, true, hitRay);
+				else pending.add(ray);
+				// TODO: damage entity.
+			}
+		});
+		
+		return pending; // TODO: add hit rays
+	}
+	
+	private RayTraceResult internalCollision(PressureRay ray) { // FIXME
 		Vec3d from = ray.getAbsFrom();
 		Vec3d to = ray.getAbsTo();
+		@SuppressWarnings("unused")
 		double pressure = ray.pressureAt(0.0d);
 		BlockPos pos = new BlockPos(from);
 		return this.pollBlockAt(pos, to, from, ray);
 	}
 	
-	private RayTraceResult rayTraceCollision(PressureRay ray) {
+	private RayTraceResult externalCollision(PressureRay ray) { // FIXME
 		Vec3d from = ray.getAbsFrom();
 		Vec3d to = ray.getAbsTo();
 		
@@ -90,7 +106,6 @@ public class BaroRaySimulator implements IBlockPropertyProvider {
 			RayTraceResult trace = this.pollBlockAt(pos, from, to, ray);
 			if (trace != null) {
 				ray.setTraceResult(trace);
-				this.addCollidingRay(pos, ray, false);
 				return trace; // 衝突した場合
 			}
 		}
@@ -99,17 +114,14 @@ public class BaroRaySimulator implements IBlockPropertyProvider {
 		if (pressure <= 0.0d) return new RayTraceResult(RayTraceResult.Type.MISS, to, null, new BlockPos(to)); // 消失した場合
 		BlockPos lpos = new BlockPos(to);
 		if (lpos.equals(pos)) {
-			this.addPendingRay(ray);
 			return new RayTraceResult(RayTraceResult.Type.MISS, to, null, new BlockPos(to)); // 衝突しなかった場合
 		}
 		
 		RayTraceResult trace = this.pollBlockAt(lpos, from, to, ray);
 		if (trace == null) {
-			this.addPendingRay(ray);
 			return new RayTraceResult(RayTraceResult.Type.MISS, to, null, new BlockPos(to)); // 衝突しなかった場合
 		} else {
 			ray.setTraceResult(trace);
-			this.addCollidingRay(lpos, ray, false);
 			return trace; // 衝突した場合，
 		}
 	}
@@ -145,23 +157,20 @@ public class BaroRaySimulator implements IBlockPropertyProvider {
 		return null;
 	}
 	
-	private void addCollidingRay(BlockPos pos, PressureRay ray, boolean reversed) {
-		EnumFacing facing = ray.hit.sideHit;
+	private void addCollidingRay(BlockPos pos, PressureRay ray, boolean reversed, Map<BlockFace, Set<PressureRay>> hitRay) {
 		double force = ray.getHitPressure();
-		if (reversed) force *= -1;
-		this.axis.get(facing.getAxis()).applyForce(ray, pos, facing, force);
-		BlockPos off = pos.offset(facing);
+		if (force <= 0) return;
+		
+		EnumFacing facing = ray.hit.sideHit;
+		BlockFace bf = new BlockFace(pos, facing);
 		synchronized (this) {
-			this.hitBlocks.put(off, this.hitBlocks.getDouble(off) + force);
+			if (hitRay.containsKey(bf)) hitRay.get(bf).add(ray);
+			else {
+				Set<PressureRay> set = new HashSet<>();
+				hitRay.put(bf, set);
+			}
 		}
-	}
-	
-	/**
-	 * 今回は衝突しなかったray, 分岐して次のステップへ
-	 * @param ray
-	 */
-	private synchronized void addPendingRay(PressureRay ray) {
-		this.pendingRays.add(ray);
+		fem.applyPressure(bf, force);
 	}
 	
 	/**

@@ -9,8 +9,14 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.Vec3i;
+import qwertzite.barostrain.core.common.BlockFace;
 
 public class FEM {
+	/**
+	 * @see VertexPos#fromBlockFace(BlockFace)
+	 */
+	public static final int MAX_VERTEX_RANK = 0;
 	
 	private IBlockPropertyProvider ibpp;
 	
@@ -22,7 +28,16 @@ public class FEM {
 		this.ibpp = ibpp;
 	}
 	
-	
+	public void applyPressure(BlockFace bf, double force) {
+		VertexPos[] vertex = VertexPos.fromBlockFace(bf);
+		Vec3i dir = bf.getFacing().getDirectionVec();
+		synchronized (externalForce) {
+			for (VertexPos pos : vertex) {
+				externalForce.put(pos, externalForce.getOrDefault(pos, Vec3d.ZERO).addVector(-force*dir.getX(), -force*dir.getY(), -force*dir.getZ()));
+			}
+		}
+		
+	}
 	
 	public void computeVertexForce(FemIter iteration) {
 		

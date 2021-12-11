@@ -4,6 +4,7 @@ import java.util.Objects;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
+import qwertzite.barostrain.core.common.BlockFace;
 
 public class VertexPos {
 	
@@ -33,6 +34,39 @@ public class VertexPos {
 			pos[ev.getIndex()] = new VertexPos(element, ev);
 		}
 		return pos;
+	}
+	
+	public static VertexPos[] fromBlockFace(BlockFace blockface) {
+		BlockPos pos = blockface.getBlockpos();
+		switch (blockface.getFacing()) {
+		case DOWN: // -y axis
+			return new VertexPos[] {
+					new VertexPos(pos, ElemVertex.VNNN), new VertexPos(pos, ElemVertex.VPNN),
+					new VertexPos(pos, ElemVertex.VNNP), new VertexPos(pos, ElemVertex.VPNP)};
+		case UP: // +y axis
+			return new VertexPos[] {
+					new VertexPos(pos, ElemVertex.VNPN), new VertexPos(pos, ElemVertex.VPPN),
+					new VertexPos(pos, ElemVertex.VNPP), new VertexPos(pos, ElemVertex.VPPP)};
+		case WEST: // -x axis
+			return new VertexPos[] {
+					new VertexPos(pos, ElemVertex.VNNN), new VertexPos(pos, ElemVertex.VNNP),
+					new VertexPos(pos, ElemVertex.VNPN), new VertexPos(pos, ElemVertex.VNPP)};
+		case EAST: // +x axis
+			return new VertexPos[] {
+					new VertexPos(pos, ElemVertex.VPNN), new VertexPos(pos, ElemVertex.VPNP),
+					new VertexPos(pos, ElemVertex.VPPN), new VertexPos(pos, ElemVertex.VPPP)};
+		case NORTH:
+			return new VertexPos[] {
+					new VertexPos(pos, ElemVertex.VNNN), new VertexPos(pos, ElemVertex.VPNN),
+					new VertexPos(pos, ElemVertex.VNPN), new VertexPos(pos, ElemVertex.VPPN)};
+		case SOUTH:
+			return new VertexPos[] {
+					new VertexPos(pos, ElemVertex.VNNP), new VertexPos(pos, ElemVertex.VPNP),
+					new VertexPos(pos, ElemVertex.VNPP), new VertexPos(pos, ElemVertex.VPPP)};
+		default:
+			assert(false);
+			return null;
+		}
 	}
 	
 	@Override
