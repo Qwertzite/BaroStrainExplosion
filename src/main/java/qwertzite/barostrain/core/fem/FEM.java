@@ -54,10 +54,14 @@ public class FEM {
 	}
 	
 	public void femExec() {
+		// つり合い外の節点
+		// 計算対象の要素
+		
+		
 		
 	}
 	
-	public void computeVertexForce(FemIter iteration) {
+	private void computeVertexForce(FemIter iteration) {
 		
 		iteration.targetElements.parallelStream() // PARALLEL
 			.forEach(e -> {// 各要素について計算し節点外力を求める
