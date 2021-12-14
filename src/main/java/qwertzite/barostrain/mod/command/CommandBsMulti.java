@@ -14,7 +14,7 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import qwertzite.barostrain.core.BsExplosions;
 import qwertzite.barostrain.mod.BaroStrainExplosionCore;
-import qwertzite.barostrain.util.BsMath;
+import qwertzite.barostrain.util.BsxMath;
 
 public class CommandBsMulti extends CommandBase {
 	
@@ -64,7 +64,7 @@ public class CommandBsMulti extends CommandBase {
 		double dx = Math.abs(x1 - x2);
 		double dz = Math.abs(z1 - z2);
 		Random rand = new Random();
-		long nn = BsMath.round(dx*dz*p, rand);
+		long nn = BsxMath.round(dx*dz*p, rand);
 		World world = sender.getEntityWorld();
 
 		if (!flag.contains("v")) {

@@ -24,7 +24,7 @@ public class TickScheduler {
 	
 	public void add(long ellapse, Action action) {
 		if (ellapse < 0) {
-			BsModLog.warn("Illegal waiting time! Must be zero or positive. {}", ellapse);
+			BsxModLog.warn("Illegal waiting time! Must be zero or positive. {}", ellapse);
 			ellapse = 0;
 		}
 		if (Long.MAX_VALUE - ellapse <= index) {

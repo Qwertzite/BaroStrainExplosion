@@ -6,7 +6,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumFacing.Axis;
 import net.minecraft.util.EnumFacing.AxisDirection;
 import net.minecraft.util.math.BlockPos;
-import qwertzite.barostrain.util.BsMath;
+import qwertzite.barostrain.util.BsxMath;
 
 /**
  * あるブロックの爆破耐性，現在それぞれの面に掛かっている力，働いている慣性力を記録する<br>
@@ -37,7 +37,7 @@ public class BlockStrain {
 	public BlockPos getPos() { return this.pos; }
 	
 	public long getAbsorveable(long applied) {
-		long ret = BsMath.clamp(applied, -this.getInertialCapacity() - this.absorved, this.getInertialCapacity()-this.absorved);
+		long ret = BsxMath.clamp(applied, -this.getInertialCapacity() - this.absorved, this.getInertialCapacity()-this.absorved);
 		return ret * applied < 0 ? 0 : ret;
 	}
 	
@@ -69,7 +69,7 @@ public class BlockStrain {
 		long maxLim = this.getMaxLim(face)*2 - current;
 		long minLim = this.getMinLim(face)*2 - current;
 //		System.out.println("flowable " + this.getPos() + " " + current + " " + this.getMinLim(face) + " " + this.getMaxLim(face) + " " + applied);
-		long ret = BsMath.clamp(applied, minLim, maxLim);
+		long ret = BsxMath.clamp(applied, minLim, maxLim);
 		return ret * applied < 0 ? 0 : ret;
 	}
 
@@ -77,7 +77,7 @@ public class BlockStrain {
 		long current = this.transmittingForce.getOrDefault(face, 0L);
 		long maxLim = this.getMaxLim(face) - current;
 		long minLim = this.getMinLim(face) - current;
-		long ret = BsMath.clamp(applied, minLim, maxLim);
+		long ret = BsxMath.clamp(applied, minLim, maxLim);
 		return ret * applied < 0 ? 0 : ret;
 	}
 	

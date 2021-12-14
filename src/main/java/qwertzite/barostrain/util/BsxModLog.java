@@ -5,14 +5,14 @@ import org.apache.logging.log4j.Logger;
 
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
-public class BsModLog {
+public class BsxModLog {
     private static Logger LOGGER;
     private static boolean isDebug = true;
     
     /** must be loaded after Config */
     public static void onPreInit(FMLPreInitializationEvent event, boolean isDebug) {
-    	BsModLog.LOGGER = event.getModLog();
-    	BsModLog.isDebug = isDebug;
+    	BsxModLog.LOGGER = event.getModLog();
+    	BsxModLog.isDebug = isDebug;
     }
     
     public static void log(Level level, Throwable e, String format, Object... data)

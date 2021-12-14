@@ -1,5 +1,7 @@
 package qwertzite.barostrain.core.fem;
 
+import net.minecraft.util.EnumFacing;
+
 public enum ElemVertex {
 	// class 0
 	VNNN(0, 0, -1, -1, -1),
@@ -37,6 +39,27 @@ public enum ElemVertex {
 		this.b = b;
 		this.c = c;
 	}
+	
+	public static ElemVertex[] getElemVertexForFace(EnumFacing face) {
+		switch (face) {
+		case DOWN: // -y axis
+			return new ElemVertex[] { ElemVertex.VNNN, ElemVertex.VPNN, ElemVertex.VNNP, ElemVertex.VPNP };
+		case UP: // +y axis
+			return new ElemVertex[] { ElemVertex.VNPN, ElemVertex.VPPN, ElemVertex.VNPP, ElemVertex.VPPP };
+		case WEST: // -x axis
+			return new ElemVertex[] { ElemVertex.VNNN, ElemVertex.VNNP, ElemVertex.VNPN, ElemVertex.VNPP };
+		case EAST: // +x axis
+			return new ElemVertex[] { ElemVertex.VPNN, ElemVertex.VPNP, ElemVertex.VPPN, ElemVertex.VPPP };
+		case NORTH:
+			return new ElemVertex[] { ElemVertex.VNNN, ElemVertex.VPNN, ElemVertex.VNPN, ElemVertex.VPPN };
+		case SOUTH:
+			return new ElemVertex[] { ElemVertex.VNNP, ElemVertex.VPNP, ElemVertex.VNPP, ElemVertex.VPPP };
+		default:
+			assert(false);
+			return null;
+		}
+	}
+	
 	public int getIndex() {
 		return index;
 	}

@@ -22,14 +22,14 @@ import qwertzite.barostrain.mod.command.CommandBSTest;
 import qwertzite.barostrain.mod.command.CommandBsMulti;
 import qwertzite.barostrain.mod.command.CommandExplosion;
 import qwertzite.barostrain.mod.command.CommandGenStructure;
-import qwertzite.barostrain.util.BsModLog;
+import qwertzite.barostrain.util.BsxModLog;
 import qwertzite.barostrain.util.TickScheduler;
 
 @Mod(modid = BaroStrainExplosionCore.MODID, name = BaroStrainExplosionCore.MOD_NAME, version = BaroStrainExplosionCore.VERSION)
 public class BaroStrainExplosionCore {
 	public static final String MODID = "barostrainexp";
 	public static final String MOD_NAME = "Barostrain Explosion";
-	public static final String VERSION = "block0A-1.12.2-0000";
+	public static final String VERSION = "0.0.0-1.12.2-0000";
 	public static final String RESOURCE_DOMAIN = "barostrainexp:";
 	
 	@Mod.Instance(MODID)
@@ -39,7 +39,7 @@ public class BaroStrainExplosionCore {
 	
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
-		BsModLog.onPreInit(event, true);
+		BsxModLog.onPreInit(event, true);
 		BsExplosions.onInit(NetworkRegistry.INSTANCE.newSimpleChannel(MODID), 0);
 		MinecraftForge.EVENT_BUS.register(this);
 		MinecraftForge.EVENT_BUS.register(this.scheduler);
