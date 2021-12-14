@@ -44,8 +44,9 @@ public class BaroRaySimulator implements IBlockPropertyProvider {
 		
 		while (!raySet.isEmpty()) {
 			raySet = this.rayLoop(raySet);
+			fem.femExec();
 			
-			
+			// TODO: process destroyed blocks.
 		}
 	}
 	
@@ -180,26 +181,5 @@ public class BaroRaySimulator implements IBlockPropertyProvider {
 	 */
 	private synchronized void addBlastVec(BlockPos pos, Vec3d vec) { // keyの追加は破壊処理の時のみなので気にする必要はない
 		this.affectedBlocks.put(pos, this.affectedBlocks.get(pos).add(vec));
-	}
-	
-	
-	
-	
-	@Override
-	public double getSigmaYield(BlockPos element) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public double getMuForElement(BlockPos element) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public double getLambdaForElement(BlockPos element) {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 }

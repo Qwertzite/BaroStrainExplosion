@@ -23,19 +23,37 @@ public class FEM {
 	private Object2DoubleMap<VertexPos> inbalanceTolerance = new Object2DoubleOpenHashMap<>();
 	
 	private Map<VertexPos, Vec3d> externalForce = new HashMap<>();
+	private Map<BlockPos, Vec3d[]> externalForceByElement = new HashMap<>();
 	
 	public FEM(IBlockPropertyProvider ibpp) {
 		this.ibpp = ibpp;
 	}
 	
 	public void applyPressure(BlockFace bf, double force) {
+		ElemVertex[] elemVertex = ElemVertex.getElemVertexForFace(bf.getFacing());
 		VertexPos[] vertex = VertexPos.fromBlockFace(bf);
 		Vec3i dir = bf.getFacing().getDirectionVec();
-		synchronized (externalForce) {
-			for (VertexPos pos : vertex) {
+		for (VertexPos pos : vertex) {
+			synchronized (externalForce) {
 				externalForce.put(pos, externalForce.getOrDefault(pos, Vec3d.ZERO).addVector(-force*dir.getX(), -force*dir.getY(), -force*dir.getZ()));
 			}
 		}
+		Vec3d[] prev;
+		synchronized (externalForceByElement) {
+			if (!externalForceByElement.containsKey(bf.getBlockpos())) {
+				externalForceByElement.put(bf.getBlockpos(), prev = new Vec3d[ElemVertex.values().length]);
+			} else {
+				prev = externalForceByElement.get(bf.getBlockpos());
+			}
+		}
+		synchronized (prev) {
+			for (ElemVertex ev : elemVertex) {
+				prev[ev.getIndex()] = prev[ev.getIndex()].addVector(-force*dir.getX(), -force*dir.getY(), -force*dir.getZ());
+			}
+		}
+	}
+	
+	public void femExec() {
 		
 	}
 	
@@ -148,24 +166,5 @@ public class FEM {
 		}
 	}
 	
-//	private double hardness(BlockPos elem) {
-////		if (this.affectedBlocks.containsKey(pos)) return 0.0d; // 破壊判定されている場合
-////		if (!this.resistanceMap.containsKey(pos)) {
-////			IBlockState iblockstate = this.world.getBlockState(pos);
-////			double resistance = this.exploder != null ?
-////					this.exploder.getExplosionResistance(this.explosion, this.world, pos, iblockstate)
-////					: iblockstate.getBlock().getExplosionResistance(this.world, pos, (Entity) null, this.explosion);
-////			this.resistanceMap.put(pos, resistance);
-////			return resistance;
-////		} else{
-////			return this.resistanceMap.getDouble(pos);
-////		} TODO:
-//		return 0.0d;
-//	}
-//	
-//	private double resistance(BlockPos elem) {
-////		if (this.affectedBlocks.containsKey(pos)) return 0.0d;
-////		else return this.world.getBlockState(pos).getBlockHardness(this.world, pos); TODO
-//		return 0.0d;
-//	}
+
 }
