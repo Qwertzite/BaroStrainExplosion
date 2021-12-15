@@ -44,6 +44,14 @@ public class VertexPos {
 		return vertexPos;
 	}
 	
+	public BlockPos[] getBelongingElements() {
+		return new BlockPos[] {
+				this.pos.add( 0,  0,  0), this.pos.add(-1,  0,  0), this.pos.add( 0, -1,  0), this.pos.add(-1, -1,  0),
+				this.pos.add( 0,  0, -1), this.pos.add(-1,  0, -1), this.pos.add( 0, -1, -1), this.pos.add(-1, -1, -1)
+		};
+		
+	}
+	
 	@Override
 	public String toString() {
 		return "[" + pos + ":" + (shift==null ? "*" : shift);

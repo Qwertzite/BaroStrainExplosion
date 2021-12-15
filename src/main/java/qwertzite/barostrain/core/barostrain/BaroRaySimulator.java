@@ -17,10 +17,10 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import qwertzite.barostrain.core.PressureRay;
 import qwertzite.barostrain.core.common.BlockFace;
+import qwertzite.barostrain.core.fem.BlockPropProviderImpl;
 import qwertzite.barostrain.core.fem.FEM;
-import qwertzite.barostrain.core.fem.IBlockPropertyProvider;
 
-public class BaroRaySimulator implements IBlockPropertyProvider {
+public class BaroRaySimulator {
 
 	private BaroStrainExplosion explosion;
 	private World world;
@@ -37,7 +37,7 @@ public class BaroRaySimulator implements IBlockPropertyProvider {
 	}
 	
 	public void evaluate() {
-		fem = new FEM(this);
+		fem = new FEM(new BlockPropProviderImpl(this.explosion, this.explosion.getExploder(), this.world));
 		
 		Set<PressureRay> raySet; // 最初のrayを生成する
 		raySet =PressureRay.seedRays(this.explosion.getPosition(), this.explosion.getIntencity(), this.world);
