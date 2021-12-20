@@ -1,10 +1,9 @@
-package qwertzite.barostrain.core.fem;
+package qwertzite.barostrain.core.common.coord;
 
 import java.util.Objects;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
-import qwertzite.barostrain.core.common.BlockFace;
 
 public class VertexPos {
 	
@@ -42,6 +41,14 @@ public class VertexPos {
 		VertexPos[] vertexPos = new VertexPos[elemVertex.length];
 		for (int i = 0; i < elemVertex.length; i++) { vertexPos[i] = new VertexPos(pos, elemVertex[i]); }
 		return vertexPos;
+	}
+	
+	public BlockPos[] getBelongingElements() {
+		return new BlockPos[] {
+				this.pos.add( 0,  0,  0), this.pos.add(-1,  0,  0), this.pos.add( 0, -1,  0), this.pos.add(-1, -1,  0),
+				this.pos.add( 0,  0, -1), this.pos.add(-1,  0, -1), this.pos.add( 0, -1, -1), this.pos.add(-1, -1, -1)
+		};
+		
 	}
 	
 	@Override

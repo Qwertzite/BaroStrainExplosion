@@ -1,16 +1,20 @@
 package qwertzite.barostrain.core.fem;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
-import qwertzite.barostrain.core.common.BlockFace;
+import qwertzite.barostrain.core.common.coord.BlockFace;
+import qwertzite.barostrain.core.common.coord.ElemVertex;
+import qwertzite.barostrain.core.common.coord.IntPoint;
+import qwertzite.barostrain.core.common.coord.VertexPos;
 
 public class FEM {
 	/**
@@ -20,9 +24,8 @@ public class FEM {
 	
 	private IBlockPropertyProvider ibpp;
 	
-	private Object2DoubleMap<VertexPos> inbalanceTolerance = new Object2DoubleOpenHashMap<>();
-	
 	private Map<VertexPos, Vec3d> externalForce = new HashMap<>();
+	
 	private Map<BlockPos, Vec3d[]> externalForceByElement = new HashMap<>();
 	
 	public FEM(IBlockPropertyProvider ibpp) {
@@ -54,9 +57,20 @@ public class FEM {
 	}
 	
 	public void femExec() {
-		// つり合い外の節点
-		// 計算対象の要素
+		Set<VertexPos> targetVertexes = this.externalForce.entrySet().parallelStream().filter(e -> {
+			Vec3d v = e.getValue();
+			double tor = ibpp.getTolerance(e.getKey());
+			return Math.abs(v.x) > tor || Math.abs(v.y) > tor || Math.abs(v.z) > tor;
+		}).map(e -> e.getKey()).collect(Collectors.toSet());
 		
+		Set<BlockPos> targetElements = targetVertexes.parallelStream()
+				.flatMap(e -> Stream.of(e.getBelongingElements())).collect(Collectors.toSet());
+		
+		FemIter iteration = new FemIter();
+		iteration.targetElements = targetElements; // 更新箇所の節点内力のうち，要素の影響分をクリア
+		iteration.setDisplacement(Collections.emptyMap());
+		
+		// 節点内力を計算
 		
 		
 	}
@@ -161,14 +175,14 @@ public class FEM {
 		}
 	}
 	
-	public void notifyBlockStatusChange(Set<BlockPos> destroyedBlocks) {
-		for (BlockPos blockpos : destroyedBlocks) {
-			VertexPos[] poss = VertexPos.fromElementPos(blockpos);
-			for (VertexPos vp : poss) {
-				this.inbalanceTolerance.remove(vp);
-			}
-		}
-	}
+//	public void notifyBlockStatusChange(Set<BlockPos> destroyedBlocks) {
+//		for (BlockPos blockpos : destroyedBlocks) {
+//			VertexPos[] poss = VertexPos.fromElementPos(blockpos);
+//			for (VertexPos vp : poss) {
+//				this.inbalanceTolerance.remove(vp);
+//			}
+//		}
+//	}
 	
 
 }

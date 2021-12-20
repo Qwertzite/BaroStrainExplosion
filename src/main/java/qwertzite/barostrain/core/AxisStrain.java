@@ -17,7 +17,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumFacing.Axis;
 import net.minecraft.util.EnumFacing.AxisDirection;
 import net.minecraft.util.math.BlockPos;
-import qwertzite.barostrain.core.common.BlockFace;
+import qwertzite.barostrain.core.common.coord.BlockFace;
 
 /**
  * 各ブロックの

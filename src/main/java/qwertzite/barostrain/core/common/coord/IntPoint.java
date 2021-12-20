@@ -1,4 +1,4 @@
-package qwertzite.barostrain.core.fem;
+package qwertzite.barostrain.core.common.coord;
 
 public enum IntPoint {
 	IP_NNN(-1, -1, -1, 1.0d /8),

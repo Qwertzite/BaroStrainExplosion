@@ -5,16 +5,11 @@ import java.util.Set;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import qwertzite.barostrain.core.BSExplosionBase;
-import qwertzite.barostrain.core.PressureRay;
-import qwertzite.barostrain.core.fem.FEM;
-import qwertzite.barostrain.core.fem.IBlockPropertyProvider;
 
 public class BaroStrainExplosion extends BSExplosionBase {
 	
@@ -42,9 +37,9 @@ public class BaroStrainExplosion extends BSExplosionBase {
 	public void doExplosionA() {
 		
 		BaroRaySimulator simulator = new BaroRaySimulator(this);
+		simulator.evaluate();
 		
 		// TODO:
-		
 	}
 	
 
@@ -69,4 +64,5 @@ public class BaroStrainExplosion extends BSExplosionBase {
 	
 	// ======== getters setters ========
 	public World getWorld() { return this.world; }
+	public Entity getExploder() { return this.exploder; }
 }

@@ -1,6 +1,5 @@
 package qwertzite.barostrain.core.fem;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -19,8 +18,6 @@ public class BlockPropProviderImpl extends AbstractBlockPropProvider {
 	private final World world;
 	private final Entity exploder;
 	
-	private Set<BlockPos> destroyeds = new HashSet<>();
-	
 	private Object2DoubleMap<BlockPos> resistanceMap = new Object2DoubleOpenHashMap<>();
 	private ReadWriteLock resistanceLock = new ReentrantReadWriteLock();
 	
@@ -34,24 +31,25 @@ public class BlockPropProviderImpl extends AbstractBlockPropProvider {
 		set.forEach(this::markAsDestroyed);
 	}
 	
-	public synchronized void markAsDestroyed(BlockPos pos) {
+	@Override
+	public void markAsDestroyed(BlockPos pos) {
 		this.resistanceMap.remove(pos);
-		this.destroyeds.add(pos);
+		super.markAsDestroyed(pos);
 	}
 	
 	@Override
 	protected double hardness(BlockPos pos) {
-		if (this.destroyeds.contains(pos)) return 0.0d; // 破壊判定されている場合
+		if (this.isDestoryed(pos)) return 0.0d; // 破壊判定されている場合
 		this.resistanceLock.readLock().lock();
 		if (!this.resistanceMap.containsKey(pos)) {
 			this.resistanceLock.readLock().unlock();
 			
+			IBlockState iblockstate = this.world.getBlockState(pos);
+			double resistance = this.exploder != null
+					? this.exploder.getExplosionResistance(this.explosion, this.world, pos, iblockstate)
+					: iblockstate.getBlock().getExplosionResistance(this.world, pos, (Entity) null, this.explosion);
 			this.resistanceLock.writeLock().lock();
 			if (!this.resistanceMap.containsKey(pos)) {
-				IBlockState iblockstate = this.world.getBlockState(pos);
-				double resistance = this.exploder != null
-						? this.exploder.getExplosionResistance(this.explosion, this.world, pos, iblockstate)
-						: iblockstate.getBlock().getExplosionResistance(this.world, pos, (Entity) null, this.explosion);
 				this.resistanceMap.put(pos, resistance);
 				this.resistanceLock.writeLock().unlock();
 				return resistance;
@@ -67,7 +65,7 @@ public class BlockPropProviderImpl extends AbstractBlockPropProvider {
 
 	@Override
 	protected double resistance(BlockPos pos) {
-		if (this.destroyeds.contains(pos)) return 0.0d;
+		if (this.isDestoryed(pos)) return 0.0d;
 		else return this.world.getBlockState(pos).getBlockHardness(this.world, pos);
 	}
 	

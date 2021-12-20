@@ -1,4 +1,4 @@
-package qwertzite.barostrain.core.fem;
+package qwertzite.barostrain.core.common.coord;
 
 import net.minecraft.util.EnumFacing;
 
