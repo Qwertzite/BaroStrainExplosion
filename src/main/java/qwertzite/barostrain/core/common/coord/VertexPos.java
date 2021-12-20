@@ -1,10 +1,9 @@
-package qwertzite.barostrain.core.fem;
+package qwertzite.barostrain.core.common.coord;
 
 import java.util.Objects;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
-import qwertzite.barostrain.core.common.BlockFace;
 
 public class VertexPos {
 	

@@ -37,9 +37,9 @@ public class BaroStrainExplosion extends BSExplosionBase {
 	public void doExplosionA() {
 		
 		BaroRaySimulator simulator = new BaroRaySimulator(this);
+		simulator.evaluate();
 		
 		// TODO:
-		
 	}
 	
 

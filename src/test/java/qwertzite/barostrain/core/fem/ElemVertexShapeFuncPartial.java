@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import qwertzite.barostrain.core.common.coord.ElemVertex;
+import qwertzite.barostrain.core.common.coord.IntPoint;
+
 class ElemVertexShapeFuncPartial {
 	
 	@Test

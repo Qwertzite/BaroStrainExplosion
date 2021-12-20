@@ -44,12 +44,12 @@ public class BlockPropProviderImpl extends AbstractBlockPropProvider {
 		if (!this.resistanceMap.containsKey(pos)) {
 			this.resistanceLock.readLock().unlock();
 			
+			IBlockState iblockstate = this.world.getBlockState(pos);
+			double resistance = this.exploder != null
+					? this.exploder.getExplosionResistance(this.explosion, this.world, pos, iblockstate)
+					: iblockstate.getBlock().getExplosionResistance(this.world, pos, (Entity) null, this.explosion);
 			this.resistanceLock.writeLock().lock();
 			if (!this.resistanceMap.containsKey(pos)) {
-				IBlockState iblockstate = this.world.getBlockState(pos);
-				double resistance = this.exploder != null
-						? this.exploder.getExplosionResistance(this.explosion, this.world, pos, iblockstate)
-						: iblockstate.getBlock().getExplosionResistance(this.world, pos, (Entity) null, this.explosion);
 				this.resistanceMap.put(pos, resistance);
 				this.resistanceLock.writeLock().unlock();
 				return resistance;

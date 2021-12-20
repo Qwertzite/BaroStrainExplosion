@@ -8,6 +8,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import net.minecraft.util.math.BlockPos;
+import qwertzite.barostrain.core.common.coord.VertexPos;
 
 public abstract class AbstractBlockPropProvider implements IBlockPropertyProvider {
 	
@@ -21,6 +22,7 @@ public abstract class AbstractBlockPropProvider implements IBlockPropertyProvide
 	}
 	protected abstract double hardness(BlockPos pos);
 	protected abstract double resistance(BlockPos pos);
+	/** used to clear cache if needed */
 	public void markAsDestroyed(BlockPos pos) {
 		this.destroyeds.add(pos);
 	}

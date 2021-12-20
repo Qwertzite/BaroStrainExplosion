@@ -1,4 +1,4 @@
-package qwertzite.barostrain.core.fem;
+package qwertzite.barostrain.core.common.coord;
 
 import javax.annotation.concurrent.Immutable;
 

@@ -8,6 +8,9 @@ import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import qwertzite.barostrain.core.common.coord.GlbIntPt;
+import qwertzite.barostrain.core.common.coord.IntPoint;
+import qwertzite.barostrain.core.common.coord.VertexPos;
 
 public class FemIter {
 	

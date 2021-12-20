@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import qwertzite.barostrain.core.common.coord.ElemVertex;
+import qwertzite.barostrain.core.common.coord.VertexPos;
 
 class FemUnitTest {
 

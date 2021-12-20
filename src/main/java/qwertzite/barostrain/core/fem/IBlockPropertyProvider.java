@@ -1,6 +1,7 @@
 package qwertzite.barostrain.core.fem;
 
 import net.minecraft.util.math.BlockPos;
+import qwertzite.barostrain.core.common.coord.VertexPos;
 
 public interface IBlockPropertyProvider {
 	

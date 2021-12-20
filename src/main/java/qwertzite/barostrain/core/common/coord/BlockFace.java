@@ -1,4 +1,4 @@
-package qwertzite.barostrain.core.common;
+package qwertzite.barostrain.core.common.coord;
 
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;

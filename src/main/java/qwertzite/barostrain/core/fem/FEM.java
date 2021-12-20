@@ -11,7 +11,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
-import qwertzite.barostrain.core.common.BlockFace;
+import qwertzite.barostrain.core.common.coord.BlockFace;
+import qwertzite.barostrain.core.common.coord.ElemVertex;
+import qwertzite.barostrain.core.common.coord.IntPoint;
+import qwertzite.barostrain.core.common.coord.VertexPos;
 
 public class FEM {
 	/**

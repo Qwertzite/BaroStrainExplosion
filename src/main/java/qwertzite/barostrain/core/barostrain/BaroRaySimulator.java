@@ -16,7 +16,7 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import qwertzite.barostrain.core.PressureRay;
-import qwertzite.barostrain.core.common.BlockFace;
+import qwertzite.barostrain.core.common.coord.BlockFace;
 import qwertzite.barostrain.core.fem.BlockPropProviderImpl;
 import qwertzite.barostrain.core.fem.FEM;
 
