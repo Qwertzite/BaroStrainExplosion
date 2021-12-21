@@ -72,7 +72,6 @@ public class FEM {
 		
 		// 節点内力を計算
 		// TODO:
-		
 		// 破壊判定
 		return Collections.emptySet();
 	}

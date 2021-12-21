@@ -27,8 +27,25 @@ public class RayIter {
 		this.pendingRays.add(pressure);
 	}
 	
-	public void addHitRay(BlockFace face, PressureRay pressure) {
+	/**
+	 * 
+	 * @param face
+	 * @param ray
+	 * @param pressure positive pressure means that the face is pressed toward positive direction.
+	 */
+	public void addHitRay(BlockFace face, PressureRay ray, double pressure) {
 		
-		// IMPL:
+		Set<PressureRay> set;
+		synchronized (this.collidedRays) { // OPTIMIZE
+			if (collidedRays.containsKey(face)) set = collidedRays.get(face);
+			else collidedRays.put(face, set = new HashSet<>());
+		}
+		synchronized (set) {
+			set.add(ray);
+		}
+		synchronized (this.facePressure) {
+			this.facePressure.put(face, this.facePressure.getDouble(face) + pressure);
+		}
+		// TODO: write to FEM object.
 	}
 }

@@ -34,30 +34,62 @@ public class SynchReadWriteMap<K, V> implements Map<K, V> { // IMPL: implement t
 
 	@Override
 	public boolean isEmpty() {
-		// TODO Auto-generated method stub
-		return false;
+		this.lock.readLock().lock();
+		boolean empty = this.backingMap.isEmpty();
+		this.lock.writeLock().unlock();
+		return empty;
 	}
 
 	@Override
 	public boolean containsKey(Object key) {
-		// TODO Auto-generated method stub
-		return false;
+		this.lock.readLock().lock();
+		boolean contains = this.backingMap.containsKey(key);
+		this.lock.readLock().unlock();
+		return contains;
 	}
 
 	@Override
 	public boolean containsValue(Object value) {
-		// TODO Auto-generated method stub
-		return false;
+		this.lock.readLock().lock();
+		boolean contains = this.backingMap.containsValue(value);
+		this.lock.readLock().unlock();
+		return contains;
 	}
 
 	@Override
 	public V get(Object key) {
-		// TODO Auto-generated method stub
-		return null;
+		this.lock.readLock().lock();
+		V v = this.backingMap.get(key);
+		this.lock.readLock().unlock();
+		return v;
 	}
 
+	/**
+	 * == heavy creation, modifiable object ==
+	 * read lock
+	 *   check that the key is absent
+	 * read unlock
+	 *   create value
+	 * write lock
+	 *   check that the key is absent
+	 * write unlock
+	 * synch (object)
+	 *   object.modify
+	 * 
+	 * == heavy creation, unmodifyable object ==
+	 * read lock
+	 *   check that the key is absent
+	 * read unlock
+	 *   create value
+	 * write lock
+	 *   check that the key is absent
+	 *   set new value.
+	 * write unlock
+	 * 
+	 */
 	@Override
 	public V put(K key, V value) {
+		
 		// TODO Auto-generated method stub
 		return null;
 	}
