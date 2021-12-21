@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @param <K>
  * @param <V>
  */
-public class SynchReadWriteMap<K, V> implements Map<K, V> { // FIXME: implement this class
+public class SynchReadWriteMap<K, V> implements Map<K, V> { // IMPL: implement this class
 
 	private final Map<K, V> backingMap;
 	private final ReadWriteLock lock;
