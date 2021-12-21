@@ -25,7 +25,7 @@ public class BaroRaySimulator {
 	private BaroStrainExplosion explosion;
 	private World world;
 
-	FEM fem;
+	private FEM fem;
 	
 	private Map<BlockPos, Vec3d> affectedBlocks = new HashMap<>();
 //	private Set<BlockFace>
@@ -44,13 +44,21 @@ public class BaroRaySimulator {
 		
 		while (!raySet.isEmpty()) {
 			raySet = this.rayLoop(raySet);
-			fem.femExec();
+			Set<BlockPos> newlyDestroyeds = fem.femExec();
+			
+			newlyDestroyeds.parallelStream(); // TODO:
 			
 			// TODO: process destroyed blocks.
+			
+			// TODO: compute reflection / transmission  and add hit rays to raySet
 		}
 	}
 	
-	private Set<PressureRay> rayLoop(Set<PressureRay> raySet) {
+	private RayIter rayLoop(Set<PressureRay> raySet) {
+		RayIter rayIter = new RayIter();
+		
+		// COMBAK: use rayIter to collect results. Also check that all positive direction on forces is equal to positive direction of each axis.
+		
 		Set<PressureRay> pending = Collections.synchronizedSet(new HashSet<>());
 		Map<BlockFace, Set<PressureRay>> hitRay = new HashMap<>();
 		
@@ -65,8 +73,7 @@ public class BaroRaySimulator {
 				// TODO: damage entity.
 			}
 		});
-		
-		return pending; // TODO: add hit rays
+		return pending;
 	}
 	
 	private RayTraceResult internalCollision(PressureRay ray) { // FIXME

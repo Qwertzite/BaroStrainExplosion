@@ -56,7 +56,7 @@ public class FEM {
 		}
 	}
 	
-	public void femExec() {
+	public Set<BlockPos> femExec() {
 		Set<VertexPos> targetVertexes = this.externalForce.entrySet().parallelStream().filter(e -> {
 			Vec3d v = e.getValue();
 			double tor = ibpp.getTolerance(e.getKey());
@@ -71,8 +71,10 @@ public class FEM {
 		iteration.setDisplacement(Collections.emptyMap());
 		
 		// 節点内力を計算
+		// TODO:
 		
-		
+		// 破壊判定
+		return Collections.emptySet();
 	}
 	
 	private void computeVertexForce(FemIter iteration) {
@@ -173,6 +175,14 @@ public class FEM {
 			assert(false);
 			return 0.0d;
 		}
+	}
+	
+	/**
+	 * その面に対しブロックが応力により及ぼしている力を返す．
+	 * 一つの面に対し１度しか呼ばれない (筈)
+	 */
+	public double getBlockForceForFace(BlockFace face) { // TODO:
+		return 0.0d;
 	}
 	
 //	public void notifyBlockStatusChange(Set<BlockPos> destroyedBlocks) {
