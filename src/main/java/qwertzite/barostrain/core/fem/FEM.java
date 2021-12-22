@@ -71,8 +71,8 @@ public class FEM {
 		iteration.setDisplacement(Collections.emptyMap());
 		
 		// 節点内力を計算
-		// TODO:
-		// 破壊判定
+		// COMBAK: 次はFEM　の実装から
+		// TODO: 破壊判定
 		return Collections.emptySet();
 	}
 	
@@ -185,6 +185,10 @@ public class FEM {
 	 */
 	public double getInertialForceFor(BlockFace face) { // IMPL:
 		return 0.0d;
+	}
+	
+	public void markAsDestoyedBlock(BlockPos pos) {
+		// TODO:
 	}
 	
 //	public void notifyBlockStatusChange(Set<BlockPos> destroyedBlocks) {

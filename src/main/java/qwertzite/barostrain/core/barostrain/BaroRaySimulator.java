@@ -69,9 +69,12 @@ public class BaroRaySimulator {
 					})).collect(Collectors.toSet());
 			
 			for (BlockPos pos : newlyDestroyeds) {
-				this.affectedBlocks.put(pos, Vec3d.ZERO);
+				synchronized (this.affectedBlocks) {
+					this.affectedBlocks.put(pos, Vec3d.ZERO);
+				}
+				bpp.markAsStateChanged(pos);
+				this.fem.markAsDestoyedBlock(pos);
 			}
-			// TODO: process destroyed blocks. notify BPP, etc.
 		}
 	}
 	
