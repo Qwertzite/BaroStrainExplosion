@@ -156,7 +156,7 @@ public class AxisStrain {
 								BlockPos npos = currentPos.offset(f); // 次の場所の候補
 //								System.out.println(currentPos + " " + f + " " + npos);
 								if (dfs.includes(npos)) continue; // 探索中の場所の場合はスキップ
-								if (depth-1 <= searchedDepthMap.getInt(npos)) continue; // TODO: 逆流する場合は許容する
+								if (depth-1 <= searchedDepthMap.getInt(npos)) continue; // TO DO: 逆流する場合は許容する
 								long maxFlowForFace = this.calcMaxFlowForFace(currentPos, f, flowReachedHere);
 //								System.out.println("face " + f + " pos " + currentPos);
 								if (BSExplosionBase.isZero(maxFlowForFace)) continue; // この面には力を伝える余力はない
@@ -304,7 +304,7 @@ public class AxisStrain {
 			double remain = this.remainingForce.containsKey(bf) ? this.remainingForce.getLong(bf) : 0.0f;
 			double tr = BSExplosionBase.isZero(initial) ? 0.0d : remain / initial;
 			
-			return rays.parallelStream().flatMap(r -> r.reflection(tr, initial - remain));
+			return rays.parallelStream().flatMap(r -> r.reflection(tr));
 		});
 	}
 	

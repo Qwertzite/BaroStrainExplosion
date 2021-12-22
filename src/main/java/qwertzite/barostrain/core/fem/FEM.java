@@ -177,10 +177,13 @@ public class FEM {
 	}
 	
 	/**
-	 * その面に対しブロックが応力により及ぼしている力を返す．
-	 * 一つの面に対し１度しか呼ばれない (筈)
+	 * Returns the force exerted by the inertia of the block on the given face,
+	 * i.e. the transmitted component of in case of block destruction.
+	 * In the future, it might be better to make the shock wave to be
+	 * transmitted even if the block is not destroyed.
+	 * This function is expected to be called only once for each face.
 	 */
-	public double getBlockForceForFace(BlockFace face) { // TODO:
+	public double getInertialForceFor(BlockFace face) { // IMPL:
 		return 0.0d;
 	}
 	
