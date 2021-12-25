@@ -22,11 +22,10 @@ public abstract class AbstractBlockPropProvider implements IBlockPropertyProvide
 	}
 	protected abstract double hardness(BlockPos pos);
 	protected abstract double resistance(BlockPos pos);
-	/** used to clear cache if needed */
-	public void markAsDestroyed(BlockPos pos) {
+	@Override
+	public void markAsStateChanged(BlockPos pos) {
 		this.destroyeds.add(pos);
 	}
-
 
 	protected double getYoungsModulus(BlockPos pos) {
 		double hardness = this.hardness(pos);

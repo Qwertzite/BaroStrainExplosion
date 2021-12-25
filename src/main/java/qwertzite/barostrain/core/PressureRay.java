@@ -108,6 +108,10 @@ public class PressureRay {
 	
 	// ==== step 3: 次のバッチに向けて ====
 	
+	/**
+	 * The non-collided rays are divided and returned for the next step.
+	 * @return Stream of next divided rays.
+	 */
 	public Stream<PressureRay> nextStep() {
 		double dist = BsxMath.distance(this.posNext, this.posPrev);
 		if (this.pressureAt(dist) <= 0.0d) {
@@ -129,7 +133,7 @@ public class PressureRay {
 	}
 	
 	// reflection:  爆発体制の1/10をブロックのモーメントとする
-	public Stream<PressureRay> reflection(double tranRate, double resistance) {
+	public Stream<PressureRay> reflection(double tranRate) {
 		if (this.hitForce <= 0.0d) return Stream.empty();
 		if (this.hit.hitVec.distanceTo(this.origin.add(posPrev)) <= 0.01d) return Stream.empty();
 		

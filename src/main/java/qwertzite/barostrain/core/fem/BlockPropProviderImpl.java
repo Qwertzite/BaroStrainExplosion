@@ -1,6 +1,5 @@
 package qwertzite.barostrain.core.fem;
 
-import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -27,14 +26,10 @@ public class BlockPropProviderImpl extends AbstractBlockPropProvider {
 		this.exploder = exploder;
 	}
 	
-	public void addDestroyed(Set<BlockPos> set) {
-		set.forEach(this::markAsDestroyed);
-	}
-	
 	@Override
-	public void markAsDestroyed(BlockPos pos) {
+	public void markAsStateChanged(BlockPos pos) { // FIXME: don't use cache.
 		this.resistanceMap.remove(pos);
-		super.markAsDestroyed(pos);
+		super.markAsStateChanged(pos);
 	}
 	
 	@Override
