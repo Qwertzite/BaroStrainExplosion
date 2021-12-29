@@ -25,7 +25,6 @@ public class FEM {
 	private IBlockPropertyProvider ibpp;
 	
 	private Map<VertexPos, Vec3d> externalForce = new HashMap<>();
-	
 	private Map<BlockPos, Vec3d[]> externalForceByElement = new HashMap<>();
 	
 	public FEM(IBlockPropertyProvider ibpp) {
@@ -63,22 +62,23 @@ public class FEM {
 			return Math.abs(v.x) > tor || Math.abs(v.y) > tor || Math.abs(v.z) > tor;
 		}).map(e -> e.getKey()).collect(Collectors.toSet());
 		
-		Set<BlockPos> targetElements = targetVertexes.parallelStream()
-				.flatMap(e -> Stream.of(e.getBelongingElements())).collect(Collectors.toSet());
 		
 		FemIter iteration = new FemIter();
-		iteration.targetElements = targetElements; // 更新箇所の節点内力のうち，要素の影響分をクリア
-		iteration.setDisplacement(Collections.emptyMap());
+		Set<BlockPos> targetElements = targetVertexes.parallelStream()
+				.flatMap(e -> Stream.of(e.getBelongingElements()))
+				.peek(e -> iteration.setTargetElement(e)) // 更新箇所の節点内力のうち，要素の影響分をクリア
+				.collect(Collectors.toSet());
 		
-		// 節点内力を計算
-		// COMBAK: 次はFEM　の実装から
-		// TODO: 破壊判定
+		this.computeVertexForce(iteration);
+		
+		// TODO: ループになるようにする
+		// COMBAK: 破壊判定
 		return Collections.emptySet();
 	}
 	
 	private void computeVertexForce(FemIter iteration) {
 		
-		iteration.targetElements.parallelStream() // PARALLEL
+		iteration.getTargetElements().parallelStream() // PARALLEL
 			.forEach(e -> {// 各要素について計算し節点外力を求める
 				
 				final double mu = this.ibpp.getMuForElement(e);
@@ -161,7 +161,7 @@ public class FEM {
 						}
 					}
 				}
-				for (int i = 0; i < NV; i++) { iteration.addExternalForce(absPos[i], f0[i], f1[i], f2[i]); } // 節点外力を集計
+				iteration.addExternalForce(e, absPos, f0, f1, f2); // 節点外力を集計
 			});
 	}
 	

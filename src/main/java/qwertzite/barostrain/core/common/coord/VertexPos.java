@@ -26,6 +26,7 @@ public class VertexPos {
 		this.shift = new Vec3i(sx1, sx2, sx3);
 	}
 	
+	/** Sorted by element vertex index. */
 	public static VertexPos[] fromElementPos(BlockPos element) {
 		final int NV = ElemVertex.values().length;
 		VertexPos[] pos = new VertexPos[NV];
