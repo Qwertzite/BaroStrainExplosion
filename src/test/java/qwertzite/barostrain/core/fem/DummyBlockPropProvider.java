@@ -1,6 +1,7 @@
 package qwertzite.barostrain.core.fem;
 
 import net.minecraft.util.math.BlockPos;
+import qwertzite.barostrain.core.common.coord.VertexPos;
 
 public class DummyBlockPropProvider implements IBlockPropertyProvider {
 	
@@ -43,6 +44,14 @@ public class DummyBlockPropProvider implements IBlockPropertyProvider {
 		double youngsModulus = this.getYoungsModulus();
 		double poissonCoeffs = this.getPoissonCoeff();
 		return youngsModulus * poissonCoeffs / ((1 + poissonCoeffs)*(1 - 2*poissonCoeffs));
+	}
+
+	@Override
+	public void markAsStateChanged(BlockPos pos) {}
+
+	@Override
+	public double getTolerance(VertexPos glbVertex) {
+		return this.getHardness() / 32;
 	}
 
 }

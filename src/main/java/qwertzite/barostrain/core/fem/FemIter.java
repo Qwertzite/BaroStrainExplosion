@@ -24,11 +24,11 @@ public class FemIter { // FIXME: parallel execution.
 	};
 	
 	// ========  preconditions  ========
+	private Map<VertexPos, Vec3d> prevDisplacement;
 	private Map<VertexPos, Vec3d> displacement;
-	private Set<BlockPos> targetElements;
 	
 	// ========  results  ========
-	private Map<VertexPos, Vec3d> vertexForce;
+	private Map<VertexPos, Vec3d> forceBalance;
 	/**
 	 * direction is inverted<br>
 	 * force vectors are sorted by ElemVertex index.
@@ -38,35 +38,40 @@ public class FemIter { // FIXME: parallel execution.
 	/** force array is sorted by EnumFacing index. Positive direction is equal to that of each axis. */
 	private Map<BlockPos, double[]> inertialForceForFace;
 	
-	public FemIter() {
+	public FemIter(Map<VertexPos, Vec3d> externalForce) {
+		this.prevDisplacement = Collections.emptyMap();
 		this.displacement = Collections.emptyMap();
 		this.vertexForcePerElem = new HashMap<>();
-		this.vertexForce = new HashMap<>();
+		this.forceBalance = new HashMap<>(externalForce);
 		this.elasticDeformation = new Object2IntOpenHashMap<>();
 	}
 	
 	public FemIter(FemIter prev) {
+		this.prevDisplacement = prev.displacement;
 		this.displacement = new HashMap<>(prev.displacement);
 		this.vertexForcePerElem = new HashMap<>(prev.vertexForcePerElem);
-		this.vertexForce = new HashMap<>(prev.vertexForce);
+		this.forceBalance = new HashMap<>(prev.forceBalance);
 		this.elasticDeformation = new Object2IntOpenHashMap<>(prev.elasticDeformation);
 	}
 	
 	// ========  preconditions  ========
 	
-	public void setTargetElement(BlockPos target) { // FIXME: parallel invocation COMBAK: まずは並列実行の集計から
+	/**
+	 * Subtract the effect of the internal forces exerted by the given element.
+	 * @param target
+	 */
+	public void clearTargetElement(BlockPos target) { // FIXME: parallel invocation
 		Vec3d[] elemForce = this.vertexForcePerElem.remove(target);
 		
 		if (elemForce != null) {
 			for (ElemVertex ev : ElemVertex.values()) {
 				Vec3d ef = elemForce[ev.getIndex()];
 				if (ef != null) {
-					this.vertexForce.merge(new VertexPos(target, ev), ef, MERGER_V3);
+					this.forceBalance.merge(new VertexPos(target, ev), ef, MERGER_V3);
 				}
 			}
 		}
 		this.elasticDeformation.removeInt(target);
-		this.targetElements.add(target);
 	}
 	
 	/**
@@ -77,10 +82,9 @@ public class FemIter { // FIXME: parallel execution.
 		this.displacement.putAll(displacement);
 	}
 	
-	// ======== computation ========
+	// ======== computation data ========
 	
-	public Set<BlockPos> getTargetElements() { return this.targetElements; }
-	
+	public Map<VertexPos, Vec3d> getForceBalance() { return this.forceBalance; }
 	public Vec3d getDisplacement(VertexPos pos) {
 		return this.displacement.getOrDefault(pos, Vec3d.ZERO);
 	}
@@ -89,9 +93,9 @@ public class FemIter { // FIXME: parallel execution.
 	
 	public void addExternalForce(BlockPos elem, VertexPos[] pos, double[] f0, double[] f1, double[] f2) {
 //		VertexPos pos = new VertexPos(element, vertex);
-		synchronized (vertexForce) { // OPTIMIZE: use efficient way.
+		synchronized (forceBalance) { // OPTIMIZE: use efficient way.
 			for (int i = 0; i < pos.length; i++) {
-				vertexForce.merge(pos[i], new Vec3d(f0[i], f1[i], f2[i]), MERGER_V3);
+				forceBalance.merge(pos[i], new Vec3d(f0[i], f1[i], f2[i]), MERGER_V3);
 			}
 		}
 		Vec3d[] vs = new Vec3d[pos.length];

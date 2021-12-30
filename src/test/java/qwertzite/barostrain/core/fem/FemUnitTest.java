@@ -2,6 +2,9 @@ package qwertzite.barostrain.core.fem;
 
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -40,23 +43,21 @@ class FemUnitTest {
 	private void test(Vec3d disp) {
 		IBlockPropertyProvider bpp = new DummyBlockPropProvider(1, 1);
 		FEM fem = new FEM(bpp);
-		FemIter iter = new FemIter();
+		FemIter iter = new FemIter(Collections.emptyMap());
 		
 		Set<BlockPos> elements = new HashSet<>();
 		elements.add(BlockPos.ORIGIN);
-		iter.targetElements = elements;
 		
 		Map<VertexPos, Vec3d> displacement = new HashMap<>();
 		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPNN), disp);
 		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPNP), disp);
 		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPPN), disp);
 		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPPP), disp);
+		iter.setDisplacement(displacement);
 		
-		iter.displacement = displacement;
+		this.executeFEM(fem, iter, elements);
 		
-		fem.computeVertexForce(iter);
-		
-		for (Map.Entry<VertexPos, Vec3d> e : iter.vertexForce.entrySet()) {
+		for (Map.Entry<VertexPos, Vec3d> e : iter.getForceBalance().entrySet()) {
 			System.out.println(e);
 		}
 	}
@@ -65,11 +66,10 @@ class FemUnitTest {
 	void compress() {
 		IBlockPropertyProvider bpp = new DummyBlockPropProvider(1, 1);
 		FEM fem = new FEM(bpp);
-		FemIter iter = new FemIter();
+		FemIter iter = new FemIter(Collections.emptyMap());
 		
 		Set<BlockPos> elements = new HashSet<>();
 		elements.add(BlockPos.ORIGIN);
-		iter.targetElements = elements;
 		
 		Map<VertexPos, Vec3d> displacement = new HashMap<>();
 		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPNN), new Vec3d(0, +0.1d, +0.1d));
@@ -77,12 +77,12 @@ class FemUnitTest {
 		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPPN), new Vec3d(0, -0.1d, +0.1d));
 		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPPP), new Vec3d(0, -0.1d, -0.1d));
 		
-		iter.displacement = displacement;
+		iter.setDisplacement(displacement);
 		
-		fem.computeVertexForce(iter);
+		this.executeFEM(fem, iter, elements);
 		
 		System.out.println("cmp");
-		for (Map.Entry<VertexPos, Vec3d> e : iter.vertexForce.entrySet()) {
+		for (Map.Entry<VertexPos, Vec3d> e : iter.vertexForce.entrySet()) {// COMBAK: テストを修正して力の向き，慣性力を確かめる
 			System.out.println(e);
 		}
 	}
@@ -124,5 +124,16 @@ class FemUnitTest {
 		for (Map.Entry<VertexPos, Vec3d> e : iter.vertexForce.entrySet()) {
 			System.out.println(e);
 		}
+	}
+	
+	private void executeFEM(FEM fem, FemIter iter, Set<BlockPos> elem) {
+		try {
+			Method method = fem.getClass().getDeclaredMethod("computeVertexForce", FemIter.class, Set.class);
+			method.setAccessible(true);
+			method.invoke(fem, iter, elem);
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			e.printStackTrace();
+		}
+		
 	}
 }

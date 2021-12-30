@@ -56,30 +56,42 @@ public class FEM {
 	}
 	
 	public Set<BlockPos> femExec() {
-		Set<VertexPos> targetVertexes = this.externalForce.entrySet().parallelStream().filter(e -> {
-			Vec3d v = e.getValue();
-			double tor = ibpp.getTolerance(e.getKey());
-			return Math.abs(v.x) > tor || Math.abs(v.y) > tor || Math.abs(v.z) > tor;
-		}).map(e -> e.getKey()).collect(Collectors.toSet());
+		FemIter iteration = new FemIter(this.externalForce);
 		
-		
-		FemIter iteration = new FemIter();
-		Set<BlockPos> targetElements = targetVertexes.parallelStream()
-				.flatMap(e -> Stream.of(e.getBelongingElements()))
-				.peek(e -> iteration.setTargetElement(e)) // 更新箇所の節点内力のうち，要素の影響分をクリア
+		Set<BlockPos> targetElements = iteration.getForceBalance().entrySet().parallelStream()
+				.filter(e -> {
+					Vec3d vec = e.getValue();
+					double tolerance = getTolerance(e.getKey());
+					return Math.abs(vec.x) >= tolerance || Math.abs(vec.y) >= tolerance || Math.abs(vec.z) >= tolerance; })
+//				.peek(e -> {}) 初回のみ変位０で計算する
+				.flatMap(e -> Stream.of(e.getKey().getBelongingElements()))
 				.collect(Collectors.toSet());
 		
-		this.computeVertexForce(iteration);
+//		while (!targetElements.isEmpty())
+		{
+			this.computeVertexForce(iteration, targetElements);
+			
+			iteration = new FemIter(iteration);
+			targetElements = iteration.getForceBalance().entrySet().parallelStream() // 更新された力のつり合いから次の計算対象を算出
+					.filter(e -> {
+						Vec3d vec = e.getValue();
+						double tolerance = getTolerance(e.getKey());
+						return Math.abs(vec.x) >= tolerance || Math.abs(vec.y) >= tolerance || Math.abs(vec.z) >= tolerance; })
+					.peek(e -> {}) // COMBAK: 初回以降は次の変位を算出
+					.flatMap(e -> Stream.of(e.getKey().getBelongingElements()))
+					.collect(Collectors.toSet()); // 一旦集計することで重複を無くす
+		}
 		
-		// TODO: ループになるようにする
 		// COMBAK: 破壊判定
+		
 		return Collections.emptySet();
 	}
 	
-	private void computeVertexForce(FemIter iteration) {
+	private void computeVertexForce(FemIter iteration, Set<BlockPos> targetElements) {
 		
-		iteration.getTargetElements().parallelStream() // PARALLEL
+		targetElements.parallelStream() // PARALLEL
 			.forEach(e -> {// 各要素について計算し節点外力を求める
+				iteration.clearTargetElement(e); // この要素が元々及ぼしていた影響分をクリア
 				
 				final double mu = this.ibpp.getMuForElement(e);
 				final double lambda = this.ibpp.getLambdaForElement(e);
@@ -155,8 +167,8 @@ public class FEM {
 					
 					for (ElemVertex p : ElemVertex.values()) {
 						for (int j = 0; j < 3; j++) {
-							f0[p.getIndex()] += sigma[0][j]*0.5d*p.shapeFuncPartial(j, xi); // TODO: 慣性成分を加算する
-							f1[p.getIndex()] += sigma[1][j]*0.5d*p.shapeFuncPartial(j, xi);
+							f0[p.getIndex()] += sigma[0][j]*0.5d*p.shapeFuncPartial(j, xi); // COMBAK: 慣性成分を加算する
+							f1[p.getIndex()] += sigma[1][j]*0.5d*p.shapeFuncPartial(j, xi); // TODO: 正負は大丈夫？
 							f2[p.getIndex()] += sigma[2][j]*0.5d*p.shapeFuncPartial(j, xi);
 						}
 					}
@@ -175,6 +187,12 @@ public class FEM {
 			return 0.0d;
 		}
 	}
+	
+	private double getTolerance(VertexPos vertex) {
+		return this.ibpp.getTolerance(vertex);
+	}
+	
+	// ==== ====  results ==== ====
 	
 	/**
 	 * Returns the force exerted by the inertia of the block on the given face,
