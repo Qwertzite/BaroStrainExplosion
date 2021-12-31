@@ -32,8 +32,8 @@ public class FEM {
 	}
 	
 	public void applyPressure(BlockFace bf, double force) {
-		ElemVertex[] elemVertex = ElemVertex.getElemVertexForFace(bf.getFacing());
-		VertexPos[] vertex = VertexPos.fromBlockFace(bf);
+		ElemVertex[] elemVertex = CoordHelper.memberElemVertex(bf.getFacing());
+		VertexPos[] vertex = CoordHelper.memberVertexPos(bf);
 		Vec3i dir = bf.getFacing().getDirectionVec();
 		for (VertexPos pos : vertex) {
 			synchronized (externalForce) {
@@ -98,7 +98,7 @@ public class FEM {
 				final double sigmaYield = this.ibpp.getSigmaYield(e);
 				
 				final int NV = ElemVertex.values().length;
-				VertexPos[] absPos = VertexPos.fromElementPos(e);
+				VertexPos[] absPos = CoordHelper.memberVertexPos(e);
 				Vec3d[] u = new Vec3d[NV]; // 節点変位
 				for (int i = 0; i < NV; i++) u[i] = iteration.getDisplacement(absPos[i]);
 				double[] f0 = new double[NV]; // 節点外力 x1成分
@@ -167,9 +167,9 @@ public class FEM {
 					
 					for (ElemVertex p : ElemVertex.values()) {
 						for (int j = 0; j < 3; j++) {
-							f0[p.getIndex()] += sigma[0][j]*0.5d*p.shapeFuncPartial(j, xi); // COMBAK: 慣性成分を加算する
-							f1[p.getIndex()] += sigma[1][j]*0.5d*p.shapeFuncPartial(j, xi); // TODO: 正負は大丈夫？
-							f2[p.getIndex()] += sigma[2][j]*0.5d*p.shapeFuncPartial(j, xi);
+							f0[p.getIndex()] += -sigma[0][j]*0.5d*p.shapeFuncPartial(j, xi); // COMBAK: 慣性成分を加算する
+							f1[p.getIndex()] += -sigma[1][j]*0.5d*p.shapeFuncPartial(j, xi); // TODO: 正負は大丈夫？
+							f2[p.getIndex()] += -sigma[2][j]*0.5d*p.shapeFuncPartial(j, xi);
 						}
 					}
 				}

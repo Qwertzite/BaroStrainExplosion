@@ -49,14 +49,15 @@ class FemUnitTest {
 		elements.add(BlockPos.ORIGIN);
 		
 		Map<VertexPos, Vec3d> displacement = new HashMap<>();
-		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPNN), disp);
-		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPNP), disp);
-		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPPN), disp);
-		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPPP), disp);
+		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPNN), disp);
+		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPNP), disp);
+		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPPN), disp);
+		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPPP), disp);
 		iter.setDisplacement(displacement);
 		
 		this.executeFEM(fem, iter, elements);
 		
+		System.out.println("test");
 		for (Map.Entry<VertexPos, Vec3d> e : iter.getForceBalance().entrySet()) {
 			System.out.println(e);
 		}
@@ -72,17 +73,17 @@ class FemUnitTest {
 		elements.add(BlockPos.ORIGIN);
 		
 		Map<VertexPos, Vec3d> displacement = new HashMap<>();
-		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPNN), new Vec3d(0, +0.1d, +0.1d));
-		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPNP), new Vec3d(0, +0.1d, -0.1d));
-		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPPN), new Vec3d(0, -0.1d, +0.1d));
-		displacement.put(new VertexPos(BlockPos.ORIGIN, ElemVertex.VPPP), new Vec3d(0, -0.1d, -0.1d));
+		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPNN), new Vec3d(0, +0.1d, +0.1d));
+		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPNP), new Vec3d(0, +0.1d, -0.1d));
+		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPPN), new Vec3d(0, -0.1d, +0.1d));
+		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPPP), new Vec3d(0, -0.1d, -0.1d));
 		
 		iter.setDisplacement(displacement);
 		
 		this.executeFEM(fem, iter, elements);
 		
 		System.out.println("cmp");
-		for (Map.Entry<VertexPos, Vec3d> e : iter.vertexForce.entrySet()) {// COMBAK: テストを修正して力の向き，慣性力を確かめる
+		for (Map.Entry<VertexPos, Vec3d> e : iter.getForceBalance().entrySet()) {
 			System.out.println(e);
 		}
 	}
@@ -105,23 +106,22 @@ class FemUnitTest {
 	private void elaborate(ElemVertex[] vs, Vec3d[] disp, String msg) {
 		IBlockPropertyProvider bpp = new DummyBlockPropProvider(1, 1);
 		FEM fem = new FEM(bpp);
-		FemIter iter = new FemIter();
+		FemIter iter = new FemIter(Collections.emptyMap());
 		
 		Set<BlockPos> elements = new HashSet<>();
 		elements.add(BlockPos.ORIGIN);
-		iter.targetElements = elements;
 		
 		Map<VertexPos, Vec3d> displacement = new HashMap<>();
 		for (int i = 0; i < vs.length; i++) {
-			displacement.put(new VertexPos(BlockPos.ORIGIN, vs[i]), disp[i]);
+			displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, vs[i]), disp[i]);
 		}
 		
-		iter.displacement = displacement;
+		iter.setDisplacement(displacement);
 		
-		fem.computeVertexForce(iter);
+		this.executeFEM(fem, iter, elements);
 		
 		System.out.println(msg);
-		for (Map.Entry<VertexPos, Vec3d> e : iter.vertexForce.entrySet()) {
+		for (Map.Entry<VertexPos, Vec3d> e : iter.getForceBalance().entrySet()) {
 			System.out.println(e);
 		}
 	}

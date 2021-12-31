@@ -40,7 +40,7 @@ public class FemIter { // FIXME: parallel execution.
 	
 	public FemIter(Map<VertexPos, Vec3d> externalForce) {
 		this.prevDisplacement = Collections.emptyMap();
-		this.displacement = Collections.emptyMap();
+		this.displacement = Collections.synchronizedMap(new HashMap<>());
 		this.vertexForcePerElem = new HashMap<>();
 		this.forceBalance = new HashMap<>(externalForce);
 		this.elasticDeformation = new Object2IntOpenHashMap<>();
@@ -67,7 +67,7 @@ public class FemIter { // FIXME: parallel execution.
 			for (ElemVertex ev : ElemVertex.values()) {
 				Vec3d ef = elemForce[ev.getIndex()];
 				if (ef != null) {
-					this.forceBalance.merge(new VertexPos(target, ev), ef, MERGER_V3);
+					this.forceBalance.merge(CoordHelper.vertexPos(target, ev), ef, MERGER_V3);
 				}
 			}
 		}
