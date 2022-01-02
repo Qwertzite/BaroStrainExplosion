@@ -54,4 +54,9 @@ public class DummyBlockPropProvider implements IBlockPropertyProvider {
 		return this.getHardness() / 32;
 	}
 
+	@Override
+	public double getMass(BlockPos element) {
+		return this.getResistance() / this.getHardness() / 16;
+	}
+
 }

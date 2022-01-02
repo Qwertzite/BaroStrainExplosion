@@ -73,7 +73,7 @@ class FemUnitTest {
 		elements.add(BlockPos.ORIGIN);
 		
 		Map<VertexPos, Vec3d> displacement = new HashMap<>();
-		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPNN), new Vec3d(0, +0.1d, +0.1d));
+		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPNN), new Vec3d(0, +0.1d, +0.1d)); // COMBAK: 力の正負，慣性力のテスト
 		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPNP), new Vec3d(0, +0.1d, -0.1d));
 		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPPN), new Vec3d(0, -0.1d, +0.1d));
 		displacement.put(CoordHelper.vertexPos(BlockPos.ORIGIN, ElemVertex.VPPP), new Vec3d(0, -0.1d, -0.1d));

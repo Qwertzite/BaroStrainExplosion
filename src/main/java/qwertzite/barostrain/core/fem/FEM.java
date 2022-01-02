@@ -96,14 +96,14 @@ public class FEM {
 				final double mu = this.ibpp.getMuForElement(e);
 				final double lambda = this.ibpp.getLambdaForElement(e);
 				final double sigmaYield = this.ibpp.getSigmaYield(e);
+				final double mass = this.ibpp.getMass(e);
 				
 				final int NV = ElemVertex.values().length;
 				VertexPos[] absPos = CoordHelper.memberVertexPos(e);
 				Vec3d[] u = new Vec3d[NV]; // 節点変位
 				for (int i = 0; i < NV; i++) u[i] = iteration.getDisplacement(absPos[i]);
-				double[] f0 = new double[NV]; // 節点外力 x1成分
-				double[] f1 = new double[NV]; // 節点外力 x2成分
-				double[] f2 = new double[NV]; // 節点外力 x3成分
+				double[][] intForce = new double[3][NV]; // 節点外力
+				double[][] inertia = new double[3][NV]; // 慣性力
 				
 				for (IntPoint xi : IntPoint.values()) {// 積分点ごとに生み出す節点外力を計算しfi に加算する
 					double[][] epsilon = new double[3][3]; // 変位
@@ -165,15 +165,24 @@ public class FEM {
 						}
 					}
 					
+					double[] displacement = new double[3]; // 積分点xiにおける変位
+					for (ElemVertex q : ElemVertex.values()) {
+						displacement[0] += q.shapeFunc(xi)*u(u[q.getIndex()], 0);
+						displacement[1] += q.shapeFunc(xi)*u(u[q.getIndex()], 1);
+						displacement[2] += q.shapeFunc(xi)*u(u[q.getIndex()], 2);
+					}
 					for (ElemVertex p : ElemVertex.values()) {
-						for (int j = 0; j < 3; j++) {
-							f0[p.getIndex()] += -sigma[0][j]*0.5d*p.shapeFuncPartial(j, xi); // COMBAK: 慣性成分を加算する
-							f1[p.getIndex()] += -sigma[1][j]*0.5d*p.shapeFuncPartial(j, xi); // TODO: 正負は大丈夫？
-							f2[p.getIndex()] += -sigma[2][j]*0.5d*p.shapeFuncPartial(j, xi);
-						}
+//						for (int j = 0; j < 3; j++) {
+//							intForce[0][p.getIndex()] += -sigma[0][j]*0.5d*p.shapeFuncPartial(j, xi); TODO: enable
+//							intForce[1][p.getIndex()] += -sigma[1][j]*0.5d*p.shapeFuncPartial(j, xi);
+//							intForce[2][p.getIndex()] += -sigma[2][j]*0.5d*p.shapeFuncPartial(j, xi);
+//						}
+						inertia[0][p.getIndex()] += mass * p.shapeFunc(xi)*displacement[0];
+						inertia[1][p.getIndex()] += mass * p.shapeFunc(xi)*displacement[1];
+						inertia[2][p.getIndex()] += mass * p.shapeFunc(xi)*displacement[2];
 					}
 				}
-				iteration.addExternalForce(e, absPos, f0, f1, f2); // 節点外力を集計
+				iteration.addExternalForce(e, absPos, intForce, inertia); // 節点外力を集計
 			});
 	}
 	

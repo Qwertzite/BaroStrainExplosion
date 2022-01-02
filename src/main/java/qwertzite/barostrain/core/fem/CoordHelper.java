@@ -1,6 +1,7 @@
 package qwertzite.barostrain.core.fem;
 
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumFacing.Axis;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 import qwertzite.barostrain.core.common.coord.BlockFace;
@@ -64,6 +65,17 @@ public class CoordHelper {
 		default:
 			assert(false);
 			return null;
+		}
+	}
+	
+	public static int indexOf(Axis axis) {
+		switch (axis) {
+		case X: return 0;
+		case Y: return 1;
+		case Z: return 2;
+		default:
+			assert (false);
+			return -1;
 		}
 	}
 }

@@ -63,4 +63,7 @@ public abstract class AbstractBlockPropProvider implements IBlockPropertyProvide
 	
 	@Override
 	public double getSigmaYield(BlockPos element) { return this.hardness(element); }
+	
+	@Override
+	public double getMass(BlockPos element) { return this.resistance(element) / this.hardness(element) / 16; }
 }

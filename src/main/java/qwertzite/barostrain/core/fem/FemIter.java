@@ -8,8 +8,11 @@ import java.util.function.BiFunction;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumFacing.Axis;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import qwertzite.barostrain.core.common.coord.BlockFace;
 import qwertzite.barostrain.core.common.coord.ElemVertex;
 import qwertzite.barostrain.core.common.coord.IntPoint;
 import qwertzite.barostrain.core.common.coord.VertexPos;
@@ -91,19 +94,36 @@ public class FemIter { // FIXME: parallel execution.
 	
 	// ======== results ========
 	
-	public void addExternalForce(BlockPos elem, VertexPos[] pos, double[] f0, double[] f1, double[] f2) {
+	public void addExternalForce(BlockPos elem, VertexPos[] pos, double[][] intForce, double[][] inertia) {
 //		VertexPos pos = new VertexPos(element, vertex);
 		synchronized (forceBalance) { // OPTIMIZE: use efficient way.
 			for (int i = 0; i < pos.length; i++) {
-				forceBalance.merge(pos[i], new Vec3d(f0[i], f1[i], f2[i]), MERGER_V3);
+				forceBalance.merge(pos[i],
+						new Vec3d(intForce[0][i] + inertia[0][i], intForce[1][i] + inertia[1][i], intForce[2][i] + inertia[2][i]), MERGER_V3);
 			}
 		}
 		Vec3d[] vs = new Vec3d[pos.length];
 		for (ElemVertex ev : ElemVertex.values()) {
 			int i = ev.getIndex();
-			vs[i] = new Vec3d(-f0[i], -f1[i], -f2[i]); // NOTE: values are inverted so that it can be easily subtracted.
+			vs[i] = new Vec3d(intForce[0][i] + inertia[0][i], intForce[1][i] + inertia[1][i], intForce[2][i] + inertia[2][i]);
 		}
-		this.vertexForcePerElem.merge(elem, vs, MERGER_V3A);
+		synchronized (vertexForcePerElem) {
+			this.vertexForcePerElem.merge(elem, vs, MERGER_V3A);
+		}
+		
+		double[] faceInertia = new double[EnumFacing.values().length];
+		for (EnumFacing face : EnumFacing.values()) {
+			int axis = CoordHelper.indexOf(face.getAxis());
+			double sum = 0.0d;
+			for (ElemVertex ev : CoordHelper.memberElemVertex(face)) {
+				int index = ev.getIndex();
+				sum += inertia[axis][index];
+			}
+			faceInertia[face.getIndex()] = sum;
+		}
+		synchronized (inertialForceForFace) {
+			this.inertialForceForFace.put(elem, faceInertia);
+		}
 	}
 	
 //	private static final IntBinaryOperator INT_MERGER = (v1, v2) -> v1 | v2;
